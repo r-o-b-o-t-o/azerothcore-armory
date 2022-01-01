@@ -1,0 +1,11 @@
+{
+	"compilerOptions": {
+		"sourceMap": true,
+		"outDir": "build",
+		"moduleResolution": "node"
+	},
+	"exclude": [
+		"node_modules"
+	],
+	"include": ["src/**/*.ts"]
+}

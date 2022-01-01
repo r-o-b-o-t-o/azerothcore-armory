@@ -1,0 +1,47 @@
+<div id="model" style="max-width: 608px; max-height: 800px;"></div>
+
+<script type="application/javascript" src="/js/viewer.min.js"></script>
+<script type="application/javascript">
+	window.WH = {
+		//debug: console.log,
+		debug: () => { },
+	};
+
+	const charactermodel = {
+		type: ZamModelViewer.WOW,
+		contentPath: "/data/",
+		background: "background.png",
+		container: $("#model"),
+		hd: true,
+		aspect: 0.76,
+		charCustomization: {
+			"race": 4,
+			"gender": 1,
+			"options": [{ "optionId": 50, "choiceId": 826 }, { "optionId": 49, "choiceId": 805 }, { "optionId": 51, "choiceId": 843 }, { "optionId": 52, "choiceId": 864 }, { "optionId": 724, "choiceId": 7963 }, { "optionId": 726, "choiceId": 7995 }, { "optionId": 736, "choiceId": 8071 }, { "optionId": 732, "choiceId": 8052 }, { "optionId": 57, "choiceId": 901 }, { "optionId": 744, "choiceId": 8130 }, { "optionId": 683, "choiceId": 7619 }, { "optionId": 53, "choiceId": 880 }, { "optionId": 745, "choiceId": 8290 }, { "optionId": 714, "choiceId": 7868 }, { "optionId": 708, "choiceId": 7845 }, { "optionId": 712, "choiceId": 7861 }, { "optionId": 710, "choiceId": 7853 }, { "optionId": 56, "choiceId": 894 }, { "optionId": 377, "choiceId": 881 }, { "optionId": 55, "choiceId": 8172 }, { "optionId": 566, "choiceId": 6518 }, { "optionId": 624, "choiceId": 7144 }, { "optionId": 925, "choiceId": 15393 }, { "optionId": 642, "choiceId": 7248 }, { "optionId": 634, "choiceId": 7213 }, { "optionId": 638, "choiceId": 7230 }],
+			"sheathMain": -1,
+			"sheathOff": -1,
+		},
+		cls: 6, // class
+		items: [
+			[3, 63669],
+			[5, 60785],
+			[10, 63673],
+			[7, 60787],
+			[8, 60788],
+			[6, 61034],
+			[16, 61031],
+			[21, 64535],
+			[22, 64152],
+		],
+		models: {
+			type: ZamModelViewer.Wow.Types.CHARACTER,
+			id: "nightelffemale",
+		},
+		mount: {
+			type: ZamModelViewer.Wow.Types.NPC,
+			//id: 25280,
+			id: 0,
+		},
+	};
+	const viewer = new ZamModelViewer(charactermodel);
+</script>

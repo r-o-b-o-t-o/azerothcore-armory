@@ -1,0 +1,45 @@
+{
+	"name": "azerothcore-armory",
+	"version": "0.0.1",
+	"description": "",
+	"scripts": {
+		"build": "tsc -p tsconfig.json",
+		"clean": "rimraf build/",
+		"start": "node build/armory/main.js",
+		"watch": "concurrently \"tsc -w --project .\" \"npm run nodemon\"",
+		"nodemon": "nodemon -q -w build build/armory/main.js",
+		"fetchdata": "node build/tools/fetchdata.js"
+	},
+	"author": "https://github.com/r-o-b-o-t-o",
+	"license": "MIT",
+	"devDependencies": {
+		"@types/cli-progress": "^3.9.2",
+		"@types/express": "^4.17.13",
+		"@types/express-handlebars": "^6.0.0",
+		"@types/glob": "^7.2.0",
+		"@types/mkdirp": "^1.0.2",
+		"@types/node": "^17.0.5",
+		"@types/node-fetch": "^2.5.12",
+		"@types/pako": "^1.0.3",
+		"concurrently": "^6.5.1",
+		"nodemon": "^2.0.15",
+		"rimraf": "^3.0.2",
+		"typescript": "^4.5.4"
+	},
+	"dependencies": {
+		"@supercharge/promise-pool": "^2.1.0",
+		"camelcase": "^6.2.1",
+		"cli-progress": "^3.9.1",
+		"csv-parser": "^3.0.0",
+		"express": "^4.17.2",
+		"express-handlebars": "^6.0.2",
+		"glob": "^7.2.0",
+		"glob-promise": "^4.2.2",
+		"handlebars-helpers": "^0.10.0",
+		"mkdirp": "^1.0.4",
+		"node-fetch": "^2.6.6",
+		"pako": "^2.0.4",
+		"pretty-ms": "^7.0.1",
+		"source-map-support": "^0.5.21"
+	}
+}
