@@ -11,7 +11,7 @@ import * as prettyMs from "pretty-ms";
 import * as cliProgress from "cli-progress";
 import promisepool = require("@supercharge/promise-pool");
 
-import { DbcReader, IItemAppearanceDbc, IItemModifiedAppearanceDbc, IMountDbc, IMountXDisplayDbc } from "../armory/data/dbcReader";
+import { DbcReader, IItemAppearanceDbc, IItemModifiedAppearanceDbc, IMountDbc, IMountXDisplayDbc } from "../armory/data/DbcReader";
 
 require("source-map-support").install();
 

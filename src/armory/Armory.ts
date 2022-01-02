@@ -5,7 +5,7 @@ import { Connection, createConnection } from "mysql2/promise";
 import { engine as handlebarsEngine } from "express-handlebars";
 
 import { Config } from "./Config";
-import { DbcReader } from "./data/dbcReader";
+import { DbcReader } from "./data/DbcReader";
 import { CharacterCustomization } from "./data/CharacterCustomization";
 import { IndexController } from "./controllers/IndexController";
 import { CharacterController } from "./controllers/CharacterController";
@@ -36,11 +36,11 @@ export class Armory {
 		}
 
 		app.engine(".html", handlebarsEngine({
-			"extname": "html",
-			"partialsDir": path.join(process.cwd(), "static", "partials"),
-			"layoutsDir": path.join(process.cwd(), "static"),
-			"defaultLayout": "layout.html",
-			"helpers": require("handlebars-helpers")(),
+			extname: "html",
+			partialsDir: path.join(process.cwd(), "static", "partials"),
+			layoutsDir: path.join(process.cwd(), "static"),
+			defaultLayout: "layout.html",
+			helpers: require("handlebars-helpers")(),
 		}));
 		app.set("view engine", "handlebars");
 		app.set("views", path.join(process.cwd(), "static"));
