@@ -1,5 +1,17 @@
 <div id="model" style="max-width: 608px; max-height: 800px;"></div>
 
+<input id="cb-hide-helmet" type="checkbox">
+<label for="cb-hide-helmet">Hide helmet</label>
+<br>
+
+<input id="cb-hide-cloak" type="checkbox">
+<label for="cb-hide-cloak">Hide cloak</label>
+<br>
+
+<input id="cb-hide-tabard" type="checkbox">
+<label for="cb-hide-tabard">Hide tabard</label>
+<br>
+
 <script type="application/javascript" src="/js/viewer.min.js"></script>
 <script type="application/javascript">
 	window.WH = {
@@ -22,7 +34,7 @@
 	};
 	const genders = ["male", "female"];
 
-	const charactermodel = {
+	const characterModel = {
 		type: ZamModelViewer.WOW,
 		contentPath: "/data/",
 		background: "background.png",
@@ -48,5 +60,43 @@
 			id: 0,
 		},
 	};
-	const viewer = new ZamModelViewer(charactermodel);
+	const viewer = new ZamModelViewer(characterModel);
+
+	$("#cb-hide-helmet").change(() => {
+		const hide = $("#cb-hide-helmet").prop("checked");
+		setSlotVisible(1, !hide);
+	});
+	$("#cb-hide-cloak").change(() => {
+		const hide = $("#cb-hide-cloak").prop("checked");
+		setSlotVisible(16, !hide);
+	});
+	$("#cb-hide-tabard").change(() => {
+		const hide = $("#cb-hide-tabard").prop("checked");
+		setSlotVisible(19, !hide);
+	});
+
+	function setSlotVisible(slot, visible) {
+		if (visible) {
+			const item = charData.characterModelItems.find(([sl, appearance]) => sl === slot);
+			if (item !== undefined) {
+				setItems([item]);
+			}
+		} else {
+			clearSlots([slot]);
+		}
+	}
+
+	function clearSlots(slots) {
+		viewer.method("clearSlots", slots.join(","));
+	}
+
+	function setItems(items) {
+		const data = items.map(([slot, display]) => {
+			return {
+				slot,
+				display,
+			};
+		});
+		viewer.method("setItems", [data]);
+	}
 </script>

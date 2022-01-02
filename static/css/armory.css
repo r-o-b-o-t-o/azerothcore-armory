@@ -1,3 +1,8 @@
 html {
 	background-color: #202124;
+	color: white;
+}
+
+#model {
+	margin-bottom: 16px;
 }

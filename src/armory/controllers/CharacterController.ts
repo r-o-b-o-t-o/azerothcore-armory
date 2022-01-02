@@ -108,7 +108,11 @@ export class CharacterController {
 	}
 
 	private getModelViewerItems(equipmentData: IEquipmentData[]): number[][] {
-		const visibleEquipment = equipmentData.filter(item => [0, 2, 3, 4, 5, 6, 7, 8, 9, 14, 15, 16, 17, 18].includes(item.slot));
+		const visibleEquipment = equipmentData.
+			filter(item =>
+				[0, 2, 3, 4, 5, 6, 7, 8, 9, 14, 15, 16, 17, 18].includes(item.slot) && // visible slots
+				item.itemEntry !== 5976 // filter out Guild Tabard (displays blank otherwise)
+			);
 
 		const items: number[][] = [];
 		for (const equipment of visibleEquipment) {
