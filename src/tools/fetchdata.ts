@@ -5,13 +5,13 @@ import * as path from "path";
 import * as pako from "pako";
 import fetch from "node-fetch";
 import * as mkdirp from "mkdirp";
-import * as csv from "csv-parser";
 import * as glob from "glob-promise";
 import { Response } from "node-fetch";
 import * as prettyMs from "pretty-ms";
-import * as camelCase from "camelcase";
 import * as cliProgress from "cli-progress";
 import promisepool = require("@supercharge/promise-pool");
+
+import { DbcReader, IItemAppearanceDbc, IItemModifiedAppearanceDbc, IMountDbc, IMountXDisplayDbc } from "../armory/data/dbcReader";
 
 require("source-map-support").install();
 
@@ -73,77 +73,16 @@ class HttpRequestError extends Error {
 	}
 }
 
-interface IItemDbc {
-	id: number;
-	classId: number;
-	subclassId: number;
-	soundOverrideSubclassId: number;
-	material: number;
-	displayInfoId: number;
-	inventoryType: number;
-	sheatheType: number;
-}
-
-interface IItemAppearanceDbc {
-	id: number;
-	displayType: number;
-	itemDisplayInfoId: number;
-	defaultIconFileDataId: number;
-	uiOrder: number;
-	playerConditionId: number;
-}
-
-interface IItemModifiedAppearanceDbc {
-	id: number;
-	itemId: number;
-	itemAppearanceModifierId: number;
-	itemAppearanceId: number;
-	orderIndex: number;
-	transmogSourceTypeEnum: number;
-}
-
-interface IMountDbc {
-	nameLang: string;
-	sourceTextLang: string;
-	descriptionLang: string;
-	id: number;
-	mountTypeId: number;
-	flags: number;
-	sourceTypeEnum: number;
-	sourceSpellId: number;
-	playerConditionId: number;
-	mountFlyRideHeight: number;
-	uiModelSceneId: number;
-	mountSpecialRiderAnimKitId: number;
-	mountSpecialSpellVisualKitId: number;
-}
-
-interface IMountXDisplayDbc {
-	id: number;
-	creatureDisplayInfoId: number;
-	playerConditionId: number;
-	mountId: number;
-}
-
-interface ISpellDbc {
-	id: number;
-	mechanic: number;
-}
-
-let dbcItem: IItemDbc[];
-let dbcItemAppearance: IItemAppearanceDbc[];
+let dbcReader: DbcReader;
 let dbcItemAppearanceById: { [key: number]: IItemAppearanceDbc };
-let dbcItemModifiedAppearance: IItemModifiedAppearanceDbc[];
 let dbcItemModifiedAppearanceByItemId: { [key: number]: IItemModifiedAppearanceDbc };
-let dbcMount: IMountDbc[];
 let dbcMountBySourceSpellId: { [key: number]: IMountDbc };
-let dbcMountDisplay: IMountXDisplayDbc[];
 let dbcMountDisplayByMountId: { [key: number]: IMountXDisplayDbc };
-let dbcSpell: ISpellDbc[];
 
 const classIdArmor = 4;
 const classIdWeapon = 2;
 const invTypeShield = 14;
+const invTypeOffHand = 23;
 const spellMechanicMounted = 21;
 
 const modelsDownloadQueue = new Set<number>();
@@ -276,7 +215,7 @@ async function downloadRaces(): Promise<void> {
 }
 
 async function downloadArmors(): Promise<void> {
-	const rows = dbcItem.filter((row) => row.classId === classIdArmor);
+	const rows = dbcReader.dbcItem.filter((row) => row.classId === classIdArmor);
 
 	const progress = new Progress("Downloading armor data...", rows.length);
 
@@ -290,7 +229,7 @@ async function downloadArmors(): Promise<void> {
 				return;
 			}
 			const appearance = dbcItemAppearanceById[modifiedAppearance.itemAppearanceId];
-			const metaPath = row.inventoryType === invTypeShield ? "item" : `armor/${row.inventoryType}`; // Inventory Type 14 = Shield
+			const metaPath = [invTypeShield, invTypeOffHand].includes(row.inventoryType) ? "item" : `armor/${row.inventoryType}`;
 			try {
 				const itemJson = await download(`meta/${metaPath}`, `${appearance.itemDisplayInfoId}.json`);
 				queueTexturesAndModels(itemJson);
@@ -308,7 +247,7 @@ async function downloadArmors(): Promise<void> {
 }
 
 async function downloadWeapons(): Promise<void> {
-	const rows = dbcItem.filter((row) => row.classId === classIdWeapon);
+	const rows = dbcReader.dbcItem.filter((row) => row.classId === classIdWeapon);
 
 	const progress = new Progress("Downloading weapon data...", rows.length);
 
@@ -338,58 +277,35 @@ async function downloadWeapons(): Promise<void> {
 	progress.stop();
 }
 
-function readDbcFile<T>(file: string): Promise<T[]> {
-	return new Promise((res, rej) => {
-		const rows = [];
-
-		fs.createReadStream(file)
-			.pipe(csv({
-				mapHeaders: ({ header, index }) => camelCase(header).replace(/[\[\]]/g, ""),
-				mapValues: ({ header, index, value }) => isNaN(value) ? value : Number(value),
-			}))
-			.on("error", rej)
-			.on("data", (data) => rows.push(data))
-			.on("end", () => {
-				res(rows);
-			});
-	});
-}
-
 async function readDbcData(): Promise<void> {
-	const dir = path.join(process.cwd(), "data");
 	console.log("Reading DBC data...");
 
-	dbcItem = await readDbcFile<IItemDbc>(path.join(dir, "Item_3.3.5_12340.csv"));
+	dbcReader = new DbcReader();
+	await dbcReader.loadAllFiles();
 
-	dbcItemAppearance = await readDbcFile<IItemAppearanceDbc>(path.join(dir, "ItemAppearance_9.2.0_41462.csv"));
 	dbcItemAppearanceById = {};
-	for (const row of dbcItemAppearance) {
+	for (const row of dbcReader.dbcItemAppearance) {
 		dbcItemAppearanceById[row.id] = row;
 	}
 
-	dbcItemModifiedAppearance = await readDbcFile<IItemModifiedAppearanceDbc>(path.join(dir, "ItemModifiedAppearance_9.2.0_41462.csv"));
 	dbcItemModifiedAppearanceByItemId = {};
-	for (const row of dbcItemModifiedAppearance) {
+	for (const row of dbcReader.dbcItemModifiedAppearance) {
 		dbcItemModifiedAppearanceByItemId[row.itemId] = row;
 	}
 
-	dbcMount = await readDbcFile<IMountDbc>(path.join(dir, "Mount_9.2.0_41462.csv"));
 	dbcMountBySourceSpellId = {};
-	for (const row of dbcMount) {
+	for (const row of dbcReader.dbcMount) {
 		dbcMountBySourceSpellId[row.sourceSpellId] = row;
 	}
 
-	dbcMountDisplay = await readDbcFile<IMountXDisplayDbc>(path.join(dir, "MountXDisplay_9.2.0_41462.csv"));
 	dbcMountDisplayByMountId = {};
-	for (const row of dbcMountDisplay) {
+	for (const row of dbcReader.dbcMountDisplay) {
 		dbcMountDisplayByMountId[row.mountId] = row;
 	}
-
-	dbcSpell = await readDbcFile<ISpellDbc>(path.join(dir, "Spell_3.3.5_12340.csv"));
 }
 
 async function downloadMounts(): Promise<void> {
-	const mountSpells = dbcSpell.filter(spell => spell.mechanic === spellMechanicMounted);
+	const mountSpells = dbcReader.dbcSpell.filter(spell => spell.mechanic === spellMechanicMounted);
 	const progress = new Progress("Downloading mount data...", mountSpells.length);
 
 	await promisepool.PromisePool

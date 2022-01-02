@@ -8,3 +8,6 @@ build/
 data/*
 !data/*.csv
 !data/background.png
+
+# Configuration
+config.json

@@ -1,13 +1,13 @@
 {
 	"name": "azerothcore-armory",
-	"version": "0.0.1",
+	"version": "0.0.2",
 	"description": "",
 	"scripts": {
 		"build": "tsc -p tsconfig.json",
 		"clean": "rimraf build/",
 		"start": "node build/armory/main.js",
 		"watch": "concurrently \"tsc -w --project .\" \"npm run nodemon\"",
-		"nodemon": "nodemon -q -w build build/armory/main.js",
+		"nodemon": "nodemon -q -w build -w config.json build/armory/main.js",
 		"fetchdata": "node build/tools/fetchdata.js"
 	},
 	"author": "https://github.com/r-o-b-o-t-o",
@@ -37,6 +37,7 @@
 		"glob-promise": "^4.2.2",
 		"handlebars-helpers": "^0.10.0",
 		"mkdirp": "^1.0.4",
+		"mysql2": "^2.3.3",
 		"node-fetch": "^2.6.6",
 		"pako": "^2.0.4",
 		"pretty-ms": "^7.0.1",
