@@ -31,18 +31,55 @@ interface ICustomizationOption {
 	choiceId: number;
 }
 
+const ITEM_CLASS_GEM = 3;
+
 export class CharacterController {
 	private armory: Armory;
 	private itemInventoryTypes: { [key: number]: number };
+	private itemIcons: { [key: number]: number };
+	private gemItems: { [key: number]: boolean };
+	private enchantSrcItems: { [key: number]: number };
+	private itemSocketBonuses: { [key: number]: number };
 
 	public constructor(armory: Armory) {
 		this.armory = armory;
+	}
+
+	public async load(): Promise<void> {
 		this.itemInventoryTypes = {};
-		for (const item of armory.dbcReader.dbcItem) {
-			const retailItem = armory.dbcReader.dbcItemRetail.find(row => row.id === item.id);
+		for (const item of this.armory.dbcReader.dbcItem) {
+			const retailItem = this.armory.dbcReader.dbcItemRetail.find(row => row.id === item.id);
 			if (retailItem !== undefined) {
 				this.itemInventoryTypes[item.id] = retailItem.inventoryType;
 			}
+		}
+
+		this.itemIcons = {};
+		const itemIconsByDisplayInfoId: { [key: number]: number } = {};
+		for (const row of this.armory.dbcReader.dbcItemDisplayInfo) {
+			itemIconsByDisplayInfoId[row.id] = row.inventoryIcon0;
+		}
+		for (const item of this.armory.dbcReader.dbcItem) {
+			const icon = itemIconsByDisplayInfoId[item.displayInfoId];
+			if (icon !== undefined) {
+				this.itemIcons[item.id] = icon;
+			}
+		}
+
+		this.gemItems = {};
+		for (const row of this.armory.dbcReader.dbcItem.filter(item => item.classId === ITEM_CLASS_GEM)) {
+			this.gemItems[row.id] = true;
+		}
+
+		this.enchantSrcItems = {};
+		for (const row of this.armory.dbcReader.dbcSpellItemEnchantment) {
+			this.enchantSrcItems[row.id] = row.srcItemId;
+		}
+
+		this.itemSocketBonuses = {};
+		let [rows, fields] = await this.armory.worldDb.query("SELECT entry, socketBonus FROM item_template WHERE socketBonus <> 0");
+		for (const row of rows as RowDataPacket[]) {
+			this.itemSocketBonuses[row.entry] = row.socketBonus;
 		}
 	}
 
@@ -62,12 +99,14 @@ export class CharacterController {
 			res.sendStatus(404);
 			return;
 		}
-		let equipmentData = await this.getEquipmentData(realm, charData.guid);
-		if (charData.class !== 3) {
-			// Keep ranged weapon only if the character is a hunter
-			equipmentData = equipmentData.filter(row => row.slot !== 17);
-		}
+		const equipmentData = await this.getEquipmentData(realm, charData.guid);
 		const customization = await this.getCustomizationOptions(charData);
+		const equipment = equipmentData.map(row => {
+			(row as any).icon = this.itemIcons[row.itemEntry];
+			(row as any).gems = this.getGemsFromEnchantments(row.enchantments);
+			(row as any).enchantments = this.filterEnchantments(row.itemEntry, row.enchantments);
+			return row;
+		});
 
 		res.render("character.html", {
 			title: `Armory - ${charName}`,
@@ -78,8 +117,9 @@ export class CharacterController {
 				gender: charData.gender,
 				level: charData.level,
 				online: charData.online === 1,
-				characterModelItems: this.getModelViewerItems(equipmentData),
+				characterModelItems: this.getModelViewerItems(equipmentData, charData.class),
 				customizationOptions: customization,
+				equipment,
 			}),
 		});
 	}
@@ -107,7 +147,11 @@ export class CharacterController {
 		return rows as RowDataPacket[] as IEquipmentData[];
 	}
 
-	private getModelViewerItems(equipmentData: IEquipmentData[]): number[][] {
+	private getModelViewerItems(equipmentData: IEquipmentData[], charClass: number): number[][] {
+		if (charClass !== 3) {
+			// Keep ranged weapon only if the character is a hunter
+			equipmentData = equipmentData.filter(row => row.slot !== 17);
+		}
 		const visibleEquipment = equipmentData.
 			filter(item =>
 				[0, 2, 3, 4, 5, 6, 7, 8, 9, 14, 15, 16, 17, 18].includes(item.slot) && // visible slots
@@ -129,6 +173,26 @@ export class CharacterController {
 		}
 
 		return items;
+	}
+
+	private parseEnchantmentsString(enchantments: string): number[] {
+		return enchantments
+			.trim()
+			.split(" ")
+			.map(enchant => parseInt(enchant))
+			.filter(enchant => enchant !== 0);
+	}
+
+	private getGemsFromEnchantments(enchantments: string): number[] {
+		return this.parseEnchantmentsString(enchantments)
+			.filter(enchant => enchant in this.enchantSrcItems && this.enchantSrcItems[enchant] in this.gemItems)
+			.map(enchant => this.enchantSrcItems[enchant]);
+	}
+
+	private filterEnchantments(item: number, enchantments: string): number[] {
+		const socketBonus = this.itemSocketBonuses[item];
+		return this.parseEnchantmentsString(enchantments)
+			.filter(enchant => enchant in this.enchantSrcItems && !(this.enchantSrcItems[enchant] in this.gemItems) && enchant !== socketBonus);
 	}
 
 	private async getCustomizationOptions(charData: ICharacterData): Promise<ICustomizationOption[]> {

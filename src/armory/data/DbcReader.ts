@@ -47,6 +47,11 @@ export interface IItemModifiedAppearanceDbc {
 	transmogSourceTypeEnum: number;
 }
 
+export interface IItemDisplayInfoDbc {
+	id: number;
+	inventoryIcon0: number;
+}
+
 export interface IMountDbc {
 	nameLang: string;
 	sourceTextLang: string;
@@ -75,14 +80,21 @@ export interface ISpellDbc {
 	mechanic: number;
 }
 
+export interface ISpellItemEnchantmentDbc {
+	id: number;
+	srcItemId: number;
+}
+
 export class DbcReader {
 	public dbcItem: IItemDbc[];
 	public dbcItemRetail: IItemRetailDbc[];
 	public dbcItemAppearance: IItemAppearanceDbc[];
 	public dbcItemModifiedAppearance: IItemModifiedAppearanceDbc[];
+	public dbcItemDisplayInfo: IItemDisplayInfoDbc[];
 	public dbcMount: IMountDbc[];
 	public dbcMountDisplay: IMountXDisplayDbc[];
 	public dbcSpell: ISpellDbc[];
+	public dbcSpellItemEnchantment: ISpellItemEnchantmentDbc[];
 
 	public readDbcFile<T>(file: string): Promise<T[]> {
 		return new Promise((res, rej) => {
@@ -108,8 +120,10 @@ export class DbcReader {
 		this.dbcItemRetail = await this.readDbcFile<IItemRetailDbc>(path.join(dir, "Item_9.2.0_41462.csv"));
 		this.dbcItemAppearance = await this.readDbcFile<IItemAppearanceDbc>(path.join(dir, "ItemAppearance_9.2.0_41462.csv"));
 		this.dbcItemModifiedAppearance = await this.readDbcFile<IItemModifiedAppearanceDbc>(path.join(dir, "ItemModifiedAppearance_9.2.0_41462.csv"));
+		this.dbcItemDisplayInfo = await this.readDbcFile<IItemDisplayInfoDbc>(path.join(dir, "ItemDisplayInfo_3.3.5_12340.csv"));
 		this.dbcMount = await this.readDbcFile<IMountDbc>(path.join(dir, "Mount_9.2.0_41462.csv"));
 		this.dbcMountDisplay = await this.readDbcFile<IMountXDisplayDbc>(path.join(dir, "MountXDisplay_9.2.0_41462.csv"));
 		this.dbcSpell = await this.readDbcFile<ISpellDbc>(path.join(dir, "Spell_3.3.5_12340.csv"));
+		this.dbcSpellItemEnchantment = await this.readDbcFile<ISpellItemEnchantmentDbc>(path.join(dir, "SpellItemEnchantment_3.3.5_12340.csv"));
 	}
 }

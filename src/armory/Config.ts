@@ -16,6 +16,7 @@ export interface IRealmConfig {
 
 export class Config {
 	public realms: IRealmConfig[];
+	public worldDatabase: IDatabaseConfig;
 
 	private static checkedMissingField: boolean = false;
 

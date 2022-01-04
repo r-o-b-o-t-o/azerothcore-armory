@@ -14,6 +14,7 @@ export class Armory {
 	public characterCustomization: CharacterCustomization;
 	public dbcReader: DbcReader;
 	public config: Config;
+	public worldDb: Connection;
 
 	private charsDbs: { [key: string]: Connection };
 
@@ -27,14 +28,19 @@ export class Armory {
 		const app: Express = express();
 		const listenPort = 48733;
 
+		console.log("Loading config...");
 		this.config = await Config.load();
+		console.log("Loading data files...");
 		await this.dbcReader.loadAllFiles();
 		await this.characterCustomization.loadData();
 
+		console.log("Connecting to databases...");
+		this.worldDb = await createConnection(this.config.worldDatabase);
 		for (const realm of this.config.realms) {
 			this.charsDbs[realm.name.toLowerCase()] = await createConnection(realm.database);
 		}
 
+		console.log("Starting server...");
 		app.engine(".html", handlebarsEngine({
 			extname: "html",
 			partialsDir: path.join(process.cwd(), "static", "partials"),
@@ -47,6 +53,7 @@ export class Armory {
 
 		app.use("/js", express.static(`static/js`));
 		app.use("/css", express.static(`static/css`));
+		app.use("/img", express.static(`static/img`));
 		app.use("/data/mo3", express.static(`data/mo3`));
 		app.use("/data/meta", express.static(`data/meta`));
 		app.use("/data/bone", express.static(`data/bone`));
@@ -57,6 +64,7 @@ export class Armory {
 		app.get("/", indexController.index.bind(indexController));
 		
 		const charsController = new CharacterController(this);
+		await charsController.load();
 		app.get("/character/:realm/:name", charsController.character.bind(charsController));
 
 		app.listen(listenPort, "0.0.0.0", () => {

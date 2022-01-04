@@ -1,4 +1,18 @@
-<div id="model" style="max-width: 608px; max-height: 800px;"></div>
+<link rel="stylesheet" href="/css/character.css">
+
+<script type="application/javascript" src="/js/viewer.min.js"></script>
+<script type="application/javascript" src="https://wotlkdb.com/static/widgets/power.js"></script>
+
+<div style="display: flex; max-width: 580px; height: 580px;">
+	<div id="equipment-col-left" style="flex: 12%;"></div>
+	<div id="model" style="flex: 76%; height: 100%;"></div>
+	<div id="equipment-col-right" style="flex: 12%;"></div>
+</div>
+<div style="display: flex; max-width: 580px; height: 70px; text-align: center;">
+	<div style="flex: 12%;"></div>
+	<div id="equipment-bottom" style="flex: 76%; height: 100%;"></div>
+	<div style="flex: 12%;"></div>
+</div>
 
 <input id="cb-hide-helmet" type="checkbox">
 <label for="cb-hide-helmet">Hide helmet</label>
@@ -12,7 +26,13 @@
 <label for="cb-hide-tabard">Hide tabard</label>
 <br>
 
-<script type="application/javascript" src="/js/viewer.min.js"></script>
+<div id="item-slot-template">
+	<div class="inventory-slot"></div>
+	<div class="icon"></div>
+	<div class="border"></div>
+	<a target="_blank"></a>
+</div>
+
 <script type="application/javascript">
 	window.WH = {
 		//debug: console.log,
@@ -98,5 +118,41 @@
 			};
 		});
 		viewer.method("setItems", [data]);
+	}
+
+	function createItemSlot(item, invSlot, icon, rel, container) {
+		const $template = $("#item-slot-template");
+		const $item = $template.clone(false);
+		$item
+			.removeAttr("id")
+			.addClass("iconlarge");
+		$item.find(".inventory-slot").css("background-image", `url("/img/inventory-slot/${invSlot}.png")`);
+		if (item !== undefined) {
+			$item.find(".icon").css("background-image", `url("https://wotlkdb.com/static/images/wow/icons/large/${icon}.jpg")`);
+			$item.find("a").attr("href", `https://wotlkdb.com/?item=${item}`);
+			$item.find("a").attr("rel", rel);
+		}
+		$item.appendTo($(container));
+	}
+	const invSlotContainers = [
+		{ element: "#equipment-col-left", slots: [0, 1, 2, 14, 4, 3, 18, 8] },
+		{ element: "#equipment-col-right", slots: [9, 5, 6, 7, 10, 11, 12, 13] },
+		{ element: "#equipment-bottom", slots: [15, 16, 17] }
+	];
+	for (const side of invSlotContainers) {
+		for (const slot of side.slots) {
+			const item = charData.equipment.find(item => item.slot === slot);
+			const rel = [];
+			if (item !== undefined) {
+				rel.push("pcs=" + charData.equipment.map(item => item.itemEntry).join(":"));
+				if (item.gems.length !== 0) {
+					rel.push("gems=" + item.gems.join(":"));
+				}
+				if (item.enchantments.length !== 0) {
+					rel.push("ench=" + item.enchantments.join(":"));
+				}
+			}
+			createItemSlot(item?.itemEntry, slot, item?.icon?.toLowerCase(), rel.join("&"), side.element);
+		}
 	}
 </script>
