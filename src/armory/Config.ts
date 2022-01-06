@@ -15,6 +15,7 @@ export interface IRealmConfig {
 }
 
 export class Config {
+	public aowowUrl: string;
 	public realms: IRealmConfig[];
 	public worldDatabase: IDatabaseConfig;
 

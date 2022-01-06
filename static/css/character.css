@@ -30,7 +30,6 @@
 .iconlarge .border {
 	width: 68px;
 	height: 68px;
-	background-image: url("https://wotlkdb.com/static/images/Icon/large/border/default.png");
 	position: absolute;
 	left: 0;
 	top: 0;
@@ -40,7 +39,6 @@
 .iconlarge a {
 	width: 62px;
 	height: 62px;
-	background: url("https://wotlkdb.com/static/images/Icon/large/hilite/default.png") no-repeat 62px 0;
 	position: absolute;
 	left: 3px;
 	top: 3px;

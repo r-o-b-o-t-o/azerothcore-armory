@@ -41,6 +41,7 @@ export class Armory {
 		}
 
 		console.log("Starting server...");
+		app.locals.aowow = this.config.aowowUrl;
 		app.engine(".html", handlebarsEngine({
 			extname: "html",
 			partialsDir: path.join(process.cwd(), "static", "partials"),
@@ -62,7 +63,7 @@ export class Armory {
 
 		const indexController = new IndexController(this);
 		app.get("/", indexController.index.bind(indexController));
-		
+
 		const charsController = new CharacterController(this);
 		await charsController.load();
 		app.get("/character/:realm/:name", charsController.character.bind(charsController));
