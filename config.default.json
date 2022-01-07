@@ -1,5 +1,6 @@
 {
 	"aowowUrl": "https://wotlkdb.com",
+	"loadDbcs": true,
 	"realms": [
 		{
 			"name": "AzerothCore",

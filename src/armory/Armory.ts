@@ -5,21 +5,21 @@ import { Connection, createConnection } from "mysql2/promise";
 import { engine as handlebarsEngine } from "express-handlebars";
 
 import { Config } from "./Config";
-import { DbcReader } from "./data/DbcReader";
+import { DbcManager } from "./data/DbcReader";
 import { CharacterCustomization } from "./data/CharacterCustomization";
 import { IndexController } from "./controllers/IndexController";
 import { CharacterController } from "./controllers/CharacterController";
 
 export class Armory {
 	public characterCustomization: CharacterCustomization;
-	public dbcReader: DbcReader;
+	public dbc: DbcManager;
 	public config: Config;
 	public worldDb: Connection;
 
 	private charsDbs: { [key: string]: Connection };
 
 	public constructor() {
-		this.dbcReader = new DbcReader();
+		this.dbc = new DbcManager();
 		this.characterCustomization = new CharacterCustomization();
 		this.charsDbs = {};
 	}
@@ -31,7 +31,9 @@ export class Armory {
 		console.log("Loading config...");
 		this.config = await Config.load();
 		console.log("Loading data files...");
-		await this.dbcReader.loadAllFiles();
+		if (this.config.loadDbcs) {
+			await this.dbc.loadAllFiles();
+		}
 		await this.characterCustomization.loadData();
 
 		console.log("Connecting to databases...");
@@ -68,6 +70,7 @@ export class Armory {
 		await charsController.load();
 		app.get("/character/:realm/:name", charsController.character.bind(charsController));
 
+		this.gc();
 		app.listen(listenPort, "0.0.0.0", () => {
 			console.log(`Server is listening on 0.0.0.0:${listenPort}.`);
 		});
@@ -75,5 +78,17 @@ export class Armory {
 
 	public getCharactersDb(realm: string): Connection {
 		return this.charsDbs[realm.toLowerCase()];
+	}
+
+	public gc(): void {
+		if (this.config.loadDbcs) {
+			return;
+		}
+
+		setTimeout(() => {
+			if (global.gc) {
+				global.gc();
+			}
+		}, 500);
 	}
 }

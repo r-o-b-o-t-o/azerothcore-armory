@@ -11,7 +11,7 @@ import * as prettyMs from "pretty-ms";
 import * as cliProgress from "cli-progress";
 import promisepool = require("@supercharge/promise-pool");
 
-import { DbcReader, IItemAppearanceDbc, IItemModifiedAppearanceDbc, IMountDbc, IMountXDisplayDbc } from "../armory/data/DbcReader";
+import { DbcManager, IItemAppearanceDbc, IItemModifiedAppearanceDbc, IMountDbc, IMountXDisplayDbc } from "../armory/data/DbcReader";
 
 require("source-map-support").install();
 
@@ -73,7 +73,7 @@ class HttpRequestError extends Error {
 	}
 }
 
-let dbcReader: DbcReader;
+let dbc: DbcManager;
 let dbcItemAppearanceById: { [key: number]: IItemAppearanceDbc };
 let dbcItemModifiedAppearanceByItemId: { [key: number]: IItemModifiedAppearanceDbc };
 let dbcMountBySourceSpellId: { [key: number]: IMountDbc };
@@ -215,7 +215,7 @@ async function downloadRaces(): Promise<void> {
 }
 
 async function downloadArmors(): Promise<void> {
-	const rows = dbcReader.dbcItem.filter((row) => row.classId === classIdArmor);
+	const rows = await dbc.item().filter((row) => row.classId === classIdArmor).toArray();
 
 	const progress = new Progress("Downloading armor data...", rows.length);
 
@@ -247,7 +247,7 @@ async function downloadArmors(): Promise<void> {
 }
 
 async function downloadWeapons(): Promise<void> {
-	const rows = dbcReader.dbcItem.filter((row) => row.classId === classIdWeapon);
+	const rows = await dbc.item().filter((row) => row.classId === classIdWeapon).toArray();
 
 	const progress = new Progress("Downloading weapon data...", rows.length);
 
@@ -280,32 +280,32 @@ async function downloadWeapons(): Promise<void> {
 async function readDbcData(): Promise<void> {
 	console.log("Reading DBC data...");
 
-	dbcReader = new DbcReader();
-	await dbcReader.loadAllFiles();
+	dbc = new DbcManager();
+	await dbc.loadAllFiles();
 
 	dbcItemAppearanceById = {};
-	for (const row of dbcReader.dbcItemAppearance) {
+	for await (const row of dbc.itemAppearance()) {
 		dbcItemAppearanceById[row.id] = row;
 	}
 
 	dbcItemModifiedAppearanceByItemId = {};
-	for (const row of dbcReader.dbcItemModifiedAppearance) {
+	for await (const row of dbc.itemModifiedAppearance()) {
 		dbcItemModifiedAppearanceByItemId[row.itemId] = row;
 	}
 
 	dbcMountBySourceSpellId = {};
-	for (const row of dbcReader.dbcMount) {
+	for await (const row of dbc.mount()) {
 		dbcMountBySourceSpellId[row.sourceSpellId] = row;
 	}
 
 	dbcMountDisplayByMountId = {};
-	for (const row of dbcReader.dbcMountDisplay) {
+	for await (const row of dbc.mountDisplay()) {
 		dbcMountDisplayByMountId[row.mountId] = row;
 	}
 }
 
 async function downloadMounts(): Promise<void> {
-	const mountSpells = dbcReader.dbcSpell.filter(spell => spell.mechanic === spellMechanicMounted);
+	const mountSpells = await dbc.spell().filter(spell => spell.mechanic === spellMechanicMounted).toArray();
 	const progress = new Progress("Downloading mount data...", mountSpells.length);
 
 	await promisepool.PromisePool

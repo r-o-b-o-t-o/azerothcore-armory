@@ -47,8 +47,9 @@ export class CharacterController {
 
 	public async load(): Promise<void> {
 		this.itemInventoryTypes = {};
-		for (const item of this.armory.dbcReader.dbcItem) {
-			const retailItem = this.armory.dbcReader.dbcItemRetail.find(row => row.id === item.id);
+		const itemsRetail = await this.armory.dbc.itemRetail().toArray();
+		for await (const item of this.armory.dbc.item()) {
+			const retailItem = itemsRetail.find(row => row.id === item.id);
 			if (retailItem !== undefined) {
 				this.itemInventoryTypes[item.id] = retailItem.inventoryType;
 			}
@@ -56,10 +57,10 @@ export class CharacterController {
 
 		this.itemIcons = {};
 		const itemIconsByDisplayInfoId: { [key: number]: number } = {};
-		for (const row of this.armory.dbcReader.dbcItemDisplayInfo) {
+		for await (const row of this.armory.dbc.itemDisplayInfo()) {
 			itemIconsByDisplayInfoId[row.id] = row.inventoryIcon0;
 		}
-		for (const item of this.armory.dbcReader.dbcItem) {
+		for await (const item of this.armory.dbc.item()) {
 			const icon = itemIconsByDisplayInfoId[item.displayInfoId];
 			if (icon !== undefined) {
 				this.itemIcons[item.id] = icon;
@@ -67,12 +68,12 @@ export class CharacterController {
 		}
 
 		this.gemItems = {};
-		for (const row of this.armory.dbcReader.dbcItem.filter(item => item.classId === ITEM_CLASS_GEM)) {
+		for await (const row of this.armory.dbc.item().filter(item => item.classId === ITEM_CLASS_GEM)) {
 			this.gemItems[row.id] = true;
 		}
 
 		this.enchantSrcItems = {};
-		for (const row of this.armory.dbcReader.dbcSpellItemEnchantment) {
+		for await (const row of this.armory.dbc.spellItemEnchantment()) {
 			this.enchantSrcItems[row.id] = row.srcItemId;
 		}
 
@@ -100,7 +101,7 @@ export class CharacterController {
 			return;
 		}
 		const equipmentData = await this.getEquipmentData(realm, charData.guid);
-		const customization = await this.getCustomizationOptions(charData);
+		const customization = this.getCustomizationOptions(charData);
 		const equipment = equipmentData.map(row => {
 			(row as any).icon = this.itemIcons[row.itemEntry];
 			(row as any).gems = this.getGemsFromEnchantments(row.enchantments);
@@ -117,11 +118,13 @@ export class CharacterController {
 				gender: charData.gender,
 				level: charData.level,
 				online: charData.online === 1,
-				characterModelItems: this.getModelViewerItems(equipmentData, charData.class),
+				characterModelItems: await this.getModelViewerItems(equipmentData, charData.class),
 				customizationOptions: customization,
 				equipment,
 			}),
 		});
+
+		this.armory.gc();
 	}
 
 	private async getCharacterData(realm: string, charName: string): Promise<ICharacterData> {
@@ -147,7 +150,7 @@ export class CharacterController {
 		return rows as RowDataPacket[] as IEquipmentData[];
 	}
 
-	private getModelViewerItems(equipmentData: IEquipmentData[], charClass: number): number[][] {
+	private async getModelViewerItems(equipmentData: IEquipmentData[], charClass: number): Promise<number[][]> {
 		if (charClass !== 3) {
 			// Keep ranged weapon only if the character is a hunter
 			equipmentData = equipmentData.filter(row => row.slot !== 17);
@@ -160,11 +163,11 @@ export class CharacterController {
 
 		const items: number[][] = [];
 		for (const equipment of visibleEquipment) {
-			const modifiedAppearance = this.armory.dbcReader.dbcItemModifiedAppearance.find(row => row.itemId === equipment.itemEntry);
+			const modifiedAppearance = await this.armory.dbc.itemModifiedAppearance().find(row => row.itemId === equipment.itemEntry);
 			if (modifiedAppearance === undefined) {
 				continue;
 			}
-			const appearance = this.armory.dbcReader.dbcItemAppearance.find(row => row.id === modifiedAppearance.itemAppearanceId);
+			const appearance = await this.armory.dbc.itemAppearance().find(row => row.id === modifiedAppearance.itemAppearanceId);
 			if (appearance === undefined) {
 				continue;
 			}
@@ -195,7 +198,7 @@ export class CharacterController {
 			.filter(enchant => enchant in this.enchantSrcItems && !(this.enchantSrcItems[enchant] in this.gemItems) && enchant !== socketBonus);
 	}
 
-	private async getCustomizationOptions(charData: ICharacterData): Promise<ICustomizationOption[]> {
+	private getCustomizationOptions(charData: ICharacterData): ICustomizationOption[] {
 		const data = this.armory.characterCustomization.getCharacterCustomizationData(charData.race, charData.gender);
 		const options = [];
 		const setOptionByChoiceIndex = (optionName: string, choiceIndex: number) => {
