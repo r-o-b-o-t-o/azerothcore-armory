@@ -69,6 +69,7 @@ export class Armory {
 		const charsController = new CharacterController(this);
 		await charsController.load();
 		app.get("/character/:realm/:name", charsController.character.bind(charsController));
+		app.get("/character/:realm/:name/talents", charsController.talents.bind(charsController));
 
 		this.gc();
 		app.listen(listenPort, "0.0.0.0", () => {

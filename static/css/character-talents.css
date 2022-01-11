@@ -1,0 +1,129 @@
+#talent-template,
+#talent-tree-template {
+	display: none;
+}
+
+.iconmedium {
+	width: 44px;
+	height: 44px;
+	position: relative;
+	display: inline-block;
+	overflow: visible;
+}
+
+.iconmedium .talent {
+	width: 36px;
+	height: 36px;
+	left: 4px;
+	top: 4px;
+	position: absolute;
+	background-repeat: no-repeat;
+}
+
+.iconmedium.empty .icon-border {
+	background-position: 0px 0px;
+}
+
+.iconmedium.empty .talent {
+	filter: grayscale(100%);
+	opacity: 0.7;
+}
+
+.iconmedium.notfull .icon-border {
+	background-position: -84px 0px;
+}
+
+.iconmedium.full .icon-border {
+	background-position: -42px 0px;
+}
+
+.iconmedium .border {
+	width: 44px;
+	height: 44px;
+	left: 0px;
+	top: 0px;
+	background-repeat: no-repeat;
+}
+
+.iconmedium .icon-border {
+	width: 42px;
+	height: 42px;
+	position: absolute;
+	left: 1px;
+	top: 1px;
+	background-repeat: no-repeat;
+}
+
+.iconmedium a {
+	width: 38px;
+	height: 38px;
+	position: absolute;
+	left: 3px;
+	top: 3px;
+}
+
+.iconmedium a span {
+	display: none;
+}
+
+.iconmedium a:hover {
+	background-position: 0 0;
+}
+
+.iconmedium::after {
+	content: attr(rank);
+	background-color: black;
+	position: absolute;
+	top: 30px;
+	left: 30px;
+	font-size: 14px;
+	padding: 0px 2px;
+}
+
+.iconmedium.empty::after {
+	display: none;
+}
+
+.iconmedium.full::after,
+.iconmedium.notfull::after {
+	border-radius: 4px;
+	cursor: default;
+	user-select: none;
+	pointer-events: none;
+}
+
+.iconmedium.notfull::after {
+	color: #30ec30;
+	border: 1px solid #30ec30;
+}
+
+.iconmedium.full::after {
+	color: #ffcf00;
+	border: 1px solid #ffcf00;
+}
+
+#talents-spec-0,
+#talents-spec-1 {
+	display: flex;
+	column-gap: 50px;
+}
+
+.talent-tree .header {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	column-gap: 10px;
+	margin-bottom: 16px;
+}
+
+.talent-tree .columns {
+	display: flex;
+	gap: 14px;
+}
+
+.talent-tree .columns .column {
+	text-align: center;
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+}

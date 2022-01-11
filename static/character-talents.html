@@ -1,0 +1,221 @@
+<link rel="stylesheet" href="/css/character-talents.css">
+<style>
+	.iconmedium a {
+		background: url("{{aowow}}/static/images/Icon/medium/hilite/default.png") no-repeat 38px 0;
+	}
+
+	.iconmedium .border {
+		background-image: url("{{aowow}}/static/images/Icon/medium/border/default.png");
+	}
+
+	.iconmedium .icon-border {
+		background-image: url("{{aowow}}/static/images/TalentCalc/border.gif");
+	}
+</style>
+<script type="application/javascript">
+	const aowow_tooltips = { "renamelinks": true, };
+</script>
+<script type="application/javascript" src="{{aowow}}/static/widgets/power.js"></script>
+
+{{> character-header }}
+
+<div id="talent-template" class="iconmedium empty">
+	<div class="talent"></div>
+	<div class="border"></div>
+	<div class="icon-border"></div>
+	<a target="_blank"></a>
+</div>
+
+<div id="talent-tree-template" class="talent-tree">
+	<div class="header">
+		<img class="icon">
+		<span class="name"></span>
+		<span class="points"></span>
+	</div>
+	<div class="columns">
+		<div class="column"></div>
+		<div class="column"></div>
+		<div class="column"></div>
+		<div class="column"></div>
+	</div>
+</div>
+
+<div id="talents-spec-0">
+	<div>
+		<h3>Glyphs</h3>
+		<div class="glyphs"></div>
+	</div>
+</div>
+<br>
+<br>
+<br>
+<div id="talents-spec-1">
+	<div>
+		<h3>Glyphs</h3>
+		<div class="glyphs"></div>
+	</div>
+</div>
+
+<script type="application/javascript">
+	const talentsData = JSON.parse(`{{{data}}}`);
+
+	for (let spec = 0; spec < 2; ++spec) {
+		let nbLearned = 0;
+		for (const tree of talentsData.trees) {
+			const learned = {};
+			for (const talent of talentsData.talents[spec]) {
+				for (const s of tree.spells) {
+					const ranks = [s.spellRank0, s.spellRank1, s.spellRank2, s.spellRank3, s.spellRank4];
+					const idx = ranks.indexOf(talent);
+					if (idx === -1) {
+						continue;
+					}
+					learned[s.id] = {
+						spell: s,
+						rank: idx + 1,
+					};
+					++nbLearned;
+					break;
+				}
+			}
+
+			const $tree = $("#talent-tree-template")
+				.clone(false)
+				.removeAttr("id")
+				.prependTo($(`#talents-spec-${spec}`));
+			$tree.find(".header .icon").attr("src", `{{aowow}}/static/images/wow/icons/medium/${tree.icon}.jpg`);
+			$tree.find(".header .name").text(tree.name);
+
+			createTree(tree, learned, $tree[0]);
+		}
+
+		if (nbLearned === 0) {
+			$(`#talents-spec-${spec}`).hide();
+			continue;
+		}
+
+		const $glyphs = $(`#talents-spec-${spec}`).find(".glyphs");
+		for (const spell of talentsData.glyphs[spec]) {
+			const $a = $("<a>");
+			$a.attr("href", `{{aowow}}?spell=${spell}`);
+			$glyphs.append($a);
+			$glyphs.append("<br>");
+		}
+	}
+
+	function createTree(data, learnedTalents, container) {
+		const $columns = $(container).find(".column");
+		let points = 0;
+
+		for (let i = 0; i < 4; ++i) {
+			const nbRows = Math.max(...data.spells.filter(s => s.columnIndex === i).map(s => s.tierId));
+			const $column = $columns.eq(i);
+			if (nbRows < 0) {
+				// Remove empty column
+				$column.remove();
+				continue;
+			}
+			for (let j = 0; j <= nbRows; ++j) {
+				$("<div>")
+					.addClass("iconmedium")
+					.appendTo($column);
+			}
+		}
+
+		for (const spell of data.spells) {
+			const $column = $columns.eq(spell.columnIndex);
+			const $placeholder = $column.find(".iconmedium").eq(spell.tierId);
+			const $template = $("#talent-template");
+			const $talent = $template.clone(false);
+			$talent.removeAttr("id");
+			$talent.find(".talent").css("background-image", `url("{{aowow}}/static/images/wow/icons/medium/${spell.icon}.jpg")`);
+			const rank = spell.id in learnedTalents ? (learnedTalents[spell.id].rank - 1) : 0;
+			$talent.find("a").attr("href", `{{aowow}}/?spell=${spell["spellRank" + rank]}`);
+			$talent.data("id", spell.id);
+
+			if (spell.id in learnedTalents) {
+				points += learnedTalents[spell.id].rank;
+				const ranks = [spell.spellRank0, spell.spellRank1, spell.spellRank2, spell.spellRank3, spell.spellRank4].filter(r => r !== 0).length;
+				const maxRank = learnedTalents[spell.id].rank === ranks;
+				$talent
+					.removeClass("empty")
+					.addClass(maxRank ? "full" : "notfull");
+				$talent.attr("rank", `${learnedTalents[spell.id].rank}/${ranks}`);
+				$talent.data("rank", learnedTalents[spell.id].rank);
+			}
+
+			$placeholder.replaceWith($talent);
+		}
+
+		// Add arrows
+		for (let i = 0; i < 4; ++i) {
+			const $column = $columns.eq(i);
+			for (const icon of $column.find(".iconmedium")) {
+				const $icon = $(icon);
+				const spell = data.spells.find(s => s.id === $icon.data("id"));
+				if (spell === undefined || spell.prereqTalent0 === 0) {
+					continue;
+				}
+				const req = data.spells.find(s => s.id === spell.prereqTalent0);
+				if (req === undefined) {
+					continue;
+				}
+				if (req.columnIndex === spell.columnIndex) {
+					// Down
+					const height = (44 + 14) * (spell.tierId - req.tierId - 1) + 25;
+					const arrowFile = $icon.data("rank") > 0 ? "2" : "";
+					createArrow(15, height, 16, undefined, -(height - 8), "down" + arrowFile, "center bottom", $icon);
+				} else if (req.tierId === spell.tierId && req.columnIndex < spell.columnIndex) {
+					// Right
+					const width = (44 + 14) * (spell.columnIndex - req.columnIndex - 1) + 23;
+					const arrowFile = $icon.data("rank") > 0 ? "2" : "";
+					createArrow(width, 15, -(width - 8), undefined, 16, "right" + arrowFile, "right center", $icon);
+				} else if (req.tierId === spell.tierId && req.columnIndex > spell.columnIndex) {
+					// Left
+					const width = (44 + 14) * (req.columnIndex - spell.columnIndex - 1) + 23;
+					const arrowFile = $icon.data("rank") > 0 ? "2" : "";
+					createArrow(width, 15, undefined, -(width - 8), 16, "left" + arrowFile, "left center", $icon)
+				} else if (req.tierId < spell.tierId && req.columnIndex < spell.columnIndex) {
+					// Right Down
+					const width = 44 * (spell.columnIndex - req.columnIndex) + 2;
+					const left = -((44 + 14) * (spell.columnIndex - req.columnIndex - 1) + 15);
+					const top = -((44 + 14) * (spell.tierId - req.tierId) - 14);
+					const arrowFile = $icon.data("rank") > 0 ? "2" : "";
+					createArrow(width, 15, left, undefined, top, "rightdown" + arrowFile, "right center", $icon);
+
+					const height = (44 + 14) * (spell.tierId - req.tierId - 1) + 40;
+					createArrow(15, height, 16, undefined, -(height - 8), "down" + arrowFile, "center bottom", $icon);
+				} else {
+					// Left Down
+					const width = 44 * (req.columnIndex - spell.columnIndex) - 1;
+					const right = -((44 + 14) * (req.columnIndex - spell.columnIndex - 1) + 15);
+					const top = -((44 + 14) * (spell.tierId - req.tierId) - 14);
+					const arrowFile = $icon.data("rank") > 0 ? "2" : "";
+					createArrow(width, 15, undefined, right, top, "leftdown" + arrowFile, "left center", $icon);
+
+					const height = (44 + 14) * (spell.tierId - req.tierId - 1) + 40;
+					createArrow(15, height, 16, undefined, -(height - 8), "down" + arrowFile, "center bottom", $icon);
+				}
+			}
+		}
+
+		$(container).find(".header .points").text(points);
+	}
+
+	function createArrow(width, height, left, right, top, file, bgPos, container) {
+		const $arrow = $("<div>");
+		$arrow.css("position", "absolute");
+		if (left !== undefined) {
+			$arrow.css("left", `${left}px`);
+		}
+		if (right !== undefined) {
+			$arrow.css("right", `${right}px`);
+		}
+		$arrow.css("top", `${top}px`);
+		$arrow.css("width", `${width}px`);
+		$arrow.css("height", `${height}px`);
+		$arrow.css("background-image", `url("{{aowow}}/static/images/TalentCalc/arrows/${file}.png")`);
+		$arrow.css("background-position", bgPos);
+		$(container).append($arrow);
+	}
+</script>

@@ -2,6 +2,7 @@ import * as express from "express";
 import { RowDataPacket } from "mysql2/promise";
 
 import { Armory } from "../Armory";
+import { IRealmConfig } from "../Config";
 
 interface ICharacterData {
 	guid: number;
@@ -32,6 +33,30 @@ interface ICustomizationOption {
 }
 
 const ITEM_CLASS_GEM = 3;
+const RaceDisplayName = {
+	1: "Human",
+	2: "Orc",
+	3: "Dwarf",
+	4: "Night Elf",
+	5: "Undead",
+	6: "Tauren",
+	7: "Gnome",
+	8: "Troll",
+	10: "Blood Elf",
+	11: "Draenei",
+};
+const ClassDisplayName = {
+	1: "Warrior",
+	2: "Paladin",
+	3: "Hunter",
+	4: "Rogue",
+	5: "Priest",
+	6: "Death Knight",
+	7: "Shaman",
+	8: "Mage",
+	9: "Warlock",
+	11: "Druid",
+};
 
 export class CharacterController {
 	private armory: Armory;
@@ -85,22 +110,24 @@ export class CharacterController {
 	}
 
 	public async character(req: express.Request, res: express.Response): Promise<void> {
-		const realm = req.params.realm;
+		const realmName = req.params.realm;
 		const charName = req.params.name;
 
-		if (this.armory.config.realms.find(r => r.name.toLowerCase() === realm.toLowerCase()) === undefined) {
+		const realm = this.getRealm(realmName);
+		if (realm === undefined) {
 			// Could not find realm
 			res.sendStatus(404);
 			return;
 		}
 
-		const charData = await this.getCharacterData(realm, charName);
+		const charData = await this.getCharacterData(realmName, charName);
 		if (charData === null) {
 			// Could not find character
 			res.sendStatus(404);
 			return;
 		}
-		const equipmentData = await this.getEquipmentData(realm, charData.guid);
+
+		const equipmentData = await this.getEquipmentData(realmName, charData.guid);
 		const customization = this.getCustomizationOptions(charData);
 		const equipment = equipmentData.map(row => {
 			(row as any).icon = this.itemIcons[row.itemEntry];
@@ -111,13 +138,11 @@ export class CharacterController {
 
 		res.render("character.html", {
 			title: `Armory - ${charName}`,
+			...this.makeSharedDataObject(realm, charData),
 			data: JSON.stringify({
-				name: charData.name,
 				race: charData.race,
-				class: charData.class,
 				gender: charData.gender,
-				level: charData.level,
-				online: charData.online === 1,
+				class: charData.class,
 				characterModelItems: await this.getModelViewerItems(equipmentData, charData.class),
 				customizationOptions: customization,
 				equipment,
@@ -125,6 +150,50 @@ export class CharacterController {
 		});
 
 		this.armory.gc();
+	}
+
+	public async talents(req: express.Request, res: express.Response): Promise<void> {
+		const realmName = req.params.realm;
+		const charName = req.params.name;
+
+		const realm = this.getRealm(realmName);
+		if (realm === undefined) {
+			// Could not find realm
+			res.sendStatus(404);
+			return;
+		}
+
+		const charData = await this.getCharacterData(realm.name, charName);
+		if (charData === null) {
+			// Could not find character
+			res.sendStatus(404);
+			return;
+		}
+
+		res.render("character-talents.html", {
+			title: `Armory - ${charName} - Talents`,
+			...this.makeSharedDataObject(realm, charData),
+			data: JSON.stringify({
+				talents: await this.getTalents(realm.name, charData.guid),
+				trees: await this.getTalentTrees(charData.class),
+				glyphs: await this.getGlyphs(realm.name, charData.guid),
+			}),
+		});
+	}
+
+	private makeSharedDataObject(realm: IRealmConfig, charData: ICharacterData) {
+		return {
+			realm: realm.name,
+			character: charData.name,
+			race: RaceDisplayName[charData.race],
+			class: ClassDisplayName[charData.class],
+			level: charData.level,
+			online: charData.online === 1,
+		};
+	}
+
+	private getRealm(realm: string): IRealmConfig {
+		return this.armory.config.realms.find(r => r.name.toLowerCase() === realm.toLowerCase());
 	}
 
 	private async getCharacterData(realm: string, charName: string): Promise<ICharacterData> {
@@ -467,5 +536,78 @@ export class CharacterController {
 		}
 
 		return options;
+	}
+
+	private async getTalents(realm: string, character: number): Promise<number[][]> {
+		const [rows, fields] = await this.armory.getCharactersDb(realm).query(`
+			SELECT spell, specMask
+			FROM character_talent
+			WHERE guid = ?
+		`, [character]);
+
+		const talents: number[][] = [[], []];
+		for (const row of rows as RowDataPacket[]) {
+			if (row.specMask === 1 || row.specMask === 3) {
+				talents[0].push(row.spell);
+			}
+			if (row.specMask === 2 || row.specMask === 3) {
+				talents[1].push(row.spell);
+			}
+		}
+
+		return talents;
+	}
+
+	private async getTalentTrees(classId: number) {
+		const items = await this.armory.dbc.talentTab()
+			.filter(tab => tab.classMask === Math.pow(2, classId - 1))
+			.map(async tab => {
+				const icon = await this.armory.dbc.spellIcon().find(icon => icon.id === tab.spellIconId);
+				const spells = await this.armory.dbc.talent()
+					.filter(row => row.tabId === tab.id)
+					.map(async row => {
+						const spell = await this.armory.dbc.spell().find(spell => spell.id === row.spellRank0);
+						const icon = await this.armory.dbc.spellIcon().find(icon => icon.id === spell?.spellIconId);
+						return { ...row, icon: this.processSpellIconTexture(icon?.textureFilename ?? ""), };
+					})
+					.toArray();
+				return {
+					name: tab.nameLang0,
+					icon: this.processSpellIconTexture(icon.textureFilename),
+					spells: await Promise.all(spells),
+				};
+			})
+			.toArray();
+		return await Promise.all(items);
+	}
+
+	private processSpellIconTexture(texturePath: string): string {
+		return texturePath
+			.toLowerCase()
+			.replace("interface\\icons\\", "")
+			.replace("interface\\spellbook\\", "")
+			.replace(/\.$/, "");
+	}
+
+	private async getGlyphs(realm: string, character: number): Promise<any[][]> {
+		const [rows, fields] = await this.armory.getCharactersDb(realm).query(`
+			SELECT guid, talentGroup, glyph1, glyph2, glyph3, glyph4, glyph5, glyph6
+			FROM character_glyphs
+			WHERE guid = ?
+		`, [character]);
+
+		const glyphs = [[], []];
+		for (const row of rows as RowDataPacket[]) {
+			const glyphIds = [row.glyph1, row.glyph2, row.glyph3, row.glyph4, row.glyph5, row.glyph6].filter(id => id !== 0);
+			for (const glyphId of glyphIds) {
+				const glyph = await this.armory.dbc.glyphProperties().find(g => g.id === glyphId);
+				if (glyph === undefined) {
+					continue;
+				}
+				glyphs[row.talentGroup].push(glyph.spellId);
+			}
+		}
+
+		return glyphs;
 	}
 }

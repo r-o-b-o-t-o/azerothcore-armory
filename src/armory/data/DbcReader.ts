@@ -3,6 +3,11 @@ import * as path from "path";
 
 import * as camelCase from "camelcase";
 
+export interface IGlyphProperties {
+	id: number;
+	spellId: number;
+}
+
 export interface IItemDbc {
 	id: number;
 	classId: number;
@@ -45,11 +50,38 @@ export interface IMountXDisplayDbc {
 export interface ISpellDbc {
 	id: number;
 	mechanic: number;
+	spellIconId: number;
 }
 
 export interface ISpellItemEnchantmentDbc {
 	id: number;
 	srcItemId: number;
+}
+
+export interface ISpellIcon {
+	id: number;
+	textureFilename: string;
+}
+
+export interface ITalent {
+	id: number;
+	tabId: number;
+	tierId: number;
+	columnIndex: number;
+	spellRank0: number;
+	spellRank1: number;
+	spellRank2: number;
+	spellRank3: number;
+	spellRank4: number;
+	prereqTalent0: number;
+	prereqRank0: number;
+}
+
+export interface ITalentTab {
+	id: number;
+	nameLang0: string;
+	spellIconId: number;
+	classMask: number;
 }
 
 interface IAsyncGeneratorWithArrayMethods<T> {
@@ -161,17 +193,17 @@ class DbcReader<T> {
 
 	public async *read(): AsyncGenerator<T> {
 		const stream = fs.createReadStream(this.filePath);
-		const itr = this.readLines(stream);
+		const itr = this.parseCsv(stream);
 		const headerLine = await itr.next();
 		if (headerLine.done === true) {
 			return;
 		}
 
-		const headerCols = this.parseCsvLine(headerLine.value)
+		const headerCols = headerLine.value
 			.map(header => camelCase(header).replace(/[\[\]]/g, ""));
 
-		for await (const line of itr) {
-			const cols = this.parseCsvLine(line)
+		for await (const arr of itr) {
+			const cols = arr
 				.map(value => {
 					const parsed: number = parseInt(value, 10);
 					return isNaN(parsed) ? value : parsed;
@@ -186,78 +218,71 @@ class DbcReader<T> {
 		}
 	}
 
-	private async *readLines(stream: fs.ReadStream): AsyncGenerator<string> {
-		let previous = "";
-
-		for await (const chunk of stream) {
-			previous += chunk;
-			let unixEolIndex: number;
-			let winEolIndex: number;
-
-			while ((unixEolIndex = previous.indexOf("\n")) >= 0 || (winEolIndex = previous.indexOf("\r\n")) >= 0) {
-				const unix = unixEolIndex >= 0;
-				const line = previous.slice(0, (unix ? unixEolIndex : winEolIndex) - 1);
-				yield line;
-				previous = previous.slice(unix ? (unixEolIndex + 1) : (winEolIndex + 2));
-			}
-		}
-
-		if (previous.length > 0) {
-			yield previous;
-		}
-	}
-
-	private parseCsvLine(line: string): string[] {
+	private async *parseCsv(stream: fs.ReadStream): AsyncGenerator<string[]> {
 		// Adapted from https://stackoverflow.com/a/14991797
 		const arr = [];
+		let col = 0;
 		let quote = false; // 'true' means we're inside a quoted field
 
-		// Iterate over each character, keep track of current row and column (of the returned array)
-		for (let col = 0, c = 0; c < line.length; c++) {
-			let cc = line[c], nc = line[c + 1]; // Current character, next character
-			arr[col] = arr[col] || ""; // Create a new column (start with empty string) if necessary
+		for await (const chunk of stream) {
+			const str = chunk.toString();
+			// Iterate over each character, keep track of current column (of the returned array)
+			for (let c = 0; c < str.length; ++c) {
+				let ch = str[c], nch = str[c + 1]; // Current character, next character
+				if (!(col in arr)) {
+					arr[col] = ""; // Create a new column (start with empty string) if necessary
+				}
 
-			// If the current character is a quotation mark, and we're inside a
-			// quoted field, and the next character is also a quotation mark,
-			// add a quotation mark to the current column and skip the next character
-			if (cc == '"' && quote && nc == '"') {
-				arr[col] += cc; ++c;
-				continue;
+				// If the current character is a quotation mark, and we're inside a
+				// quoted field, and the next character is also a quotation mark,
+				// add a quotation mark to the current column and skip the next character
+				if (ch == '"' && quote && nch == '"') {
+					arr[col] += ch;
+					++c;
+					continue;
+				}
+
+				// If it's just one quotation mark, begin/end quoted field
+				if (ch == '"') {
+					quote = !quote;
+					continue;
+				}
+
+				// If it's a comma and we're not in a quoted field, move on to the next column
+				if (ch == ',' && !quote) {
+					++col;
+					continue;
+				}
+
+				// If it's a newline (CRLF) and we're not in a quoted field, skip the next character
+				// and move on to the next row and move to column 0 of that new row
+				if (ch == '\r' && nch == '\n' && !quote) {
+					yield arr;
+					arr.length = 0; // Clear the row
+					col = 0;
+					++c;
+					continue;
+				}
+
+				// If it's a newline (LF or CR) and we're not in a quoted field,
+				// move on to the next row and move to column 0 of that new row
+				if (!quote && (ch == '\r' || ch == '\n')) {
+					yield arr;
+					arr.length = 0; // Clear the row
+					col = 0;
+					continue;
+				}
+
+				// Otherwise, append the current character to the current column
+				arr[col] += ch;
 			}
-
-			// If it's just one quotation mark, begin/end quoted field
-			if (cc == '"') {
-				quote = !quote;
-				continue;
-			}
-
-			// If it's a comma and we're not in a quoted field, move on to the next column
-			if (cc == ',' && !quote) {
-				++col;
-				continue;
-			}
-
-			// If it's a newline (CRLF) and we're not in a quoted field, move on to the next row
-			if (cc == '\r' && nc == '\n' && !quote) {
-				break;
-			}
-
-			// If it's a newline (LF or CR) and we're not in a quoted field, move on to the next row
-			if ((cc == '\n' && !quote) ||
-				(cc == '\r' && !quote)) {
-				break;
-			}
-
-			// Otherwise, append the current character to the current column
-			arr[col] += cc;
 		}
-
-		return arr;
 	}
 }
 
 const dir = path.join(process.cwd(), "data");
 export const DbcFiles = {
+	glyphProperties: path.join(dir, "GlyphProperties_3.3.5_12340.csv"),
 	item: path.join(dir, "Item_3.3.5_12340.csv"),
 	itemRetail: path.join(dir, "Item_9.2.0_41462.csv"),
 	itemAppearance: path.join(dir, "ItemAppearance_9.2.0_41462.csv"),
@@ -267,9 +292,13 @@ export const DbcFiles = {
 	mountDisplay: path.join(dir, "MountXDisplay_9.2.0_41462.csv"),
 	spell: path.join(dir, "Spell_3.3.5_12340.csv"),
 	spellItemEnchantment: path.join(dir, "SpellItemEnchantment_3.3.5_12340.csv"),
+	spellIcon: path.join(dir, "SpellIcon_3.3.5_12340.csv"),
+	talent: path.join(dir, "Talent_3.3.5_12340.csv"),
+	talentTab: path.join(dir, "TalentTab_3.3.5_12340.csv"),
 };
 
 const dbcFields = {
+	glyphProperties: ["id", "spellId"],
 	item: ["id", "classId", "displayInfoId", "inventoryType"],
 	itemRetail: ["id", "inventoryType"],
 	itemAppearance: ["id", "itemDisplayInfoId"],
@@ -277,11 +306,15 @@ const dbcFields = {
 	itemDisplayInfo: ["id", "inventoryIcon0"],
 	mount: ["id", "sourceSpellId"],
 	mountDisplay: ["id", "creatureDisplayInfoId", "mountId"],
-	spell: ["id", "mechanic"],
+	spell: ["id", "mechanic", "spellIconId"],
 	spellItemEnchantment: ["id", "srcItemId"],
+	spellIcon: ["id", "textureFilename"],
+	talent: ["id", "tabId", "tierId", "columnIndex", "spellRank0", "spellRank1", "spellRank2", "spellRank3", "spellRank4", "prereqTalent0", "prereqRank0"],
+	talentTab: ["id", "nameLang0", "spellIconId", "classMask"],
 };
 
 export class DbcManager {
+	private _glyphProperties: IGlyphProperties[];
 	private _item: IItemDbc[];
 	private _itemRetail: IItemRetailDbc[];
 	private _itemAppearance: IItemAppearanceDbc[];
@@ -291,8 +324,12 @@ export class DbcManager {
 	private _mountDisplay: IMountXDisplayDbc[];
 	private _spell: ISpellDbc[];
 	private _spellItemEnchantment: ISpellItemEnchantmentDbc[];
+	private _spellIcon: ISpellIcon[];
+	private _talent: ITalent[];
+	private _talentTab: ITalentTab[];
 
 	public async loadAllFiles(): Promise<void> {
+		this._glyphProperties = await this.read<IGlyphProperties>(DbcFiles.glyphProperties, dbcFields.glyphProperties).toArray();
 		this._item = await this.read<IItemDbc>(DbcFiles.item, dbcFields.item).toArray();
 		this._itemRetail = await this.read<IItemRetailDbc>(DbcFiles.itemRetail, dbcFields.itemRetail).toArray();
 		this._itemAppearance = await this.read<IItemAppearanceDbc>(DbcFiles.itemAppearance, dbcFields.itemAppearance).toArray();
@@ -302,6 +339,13 @@ export class DbcManager {
 		this._mountDisplay = await this.read<IMountXDisplayDbc>(DbcFiles.mountDisplay, dbcFields.mountDisplay).toArray();
 		this._spell = await this.read<ISpellDbc>(DbcFiles.spell, dbcFields.spell).toArray();
 		this._spellItemEnchantment = await this.read<ISpellItemEnchantmentDbc>(DbcFiles.spellItemEnchantment, dbcFields.spellItemEnchantment).toArray();
+		this._spellIcon = await this.read<ISpellIcon>(DbcFiles.spellIcon, dbcFields.spellIcon).toArray();
+		this._talent = await this.read<ITalent>(DbcFiles.talent, dbcFields.talent).toArray();
+		this._talentTab = await this.read<ITalentTab>(DbcFiles.talentTab, dbcFields.talentTab).toArray();
+	}
+
+	public glyphProperties() {
+		return this.getLoadedDataOrRead(DbcFiles.glyphProperties, this._glyphProperties, dbcFields.glyphProperties);
 	}
 
 	public item() {
@@ -338,6 +382,18 @@ export class DbcManager {
 
 	public spellItemEnchantment() {
 		return this.getLoadedDataOrRead(DbcFiles.spellItemEnchantment, this._spellItemEnchantment, dbcFields.spellItemEnchantment);
+	}
+
+	public spellIcon() {
+		return this.getLoadedDataOrRead(DbcFiles.spellIcon, this._spellIcon, dbcFields.spellIcon);
+	}
+
+	public talent() {
+		return this.getLoadedDataOrRead(DbcFiles.talent, this._talent, dbcFields.talent);
+	}
+
+	public talentTab() {
+		return this.getLoadedDataOrRead(DbcFiles.talentTab, this._talentTab, dbcFields.talentTab);
 	}
 
 	private read<T>(file: string, keepFields: string[] = []): AsyncGenWrapper<T> {

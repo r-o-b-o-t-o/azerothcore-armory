@@ -12,7 +12,7 @@
 <script type="application/javascript" src="/js/viewer.min.js"></script>
 <script type="application/javascript" src="{{aowow}}/static/widgets/power.js"></script>
 
-<a href="/">Back to Armory</a><br><br>
+{{> character-header }}
 
 <div style="display: flex; max-width: 580px; height: 580px;">
 	<div id="equipment-col-left" style="flex: 12%;"></div>
@@ -37,7 +37,7 @@
 <label for="cb-hide-tabard">Hide tabard</label>
 <br>
 
-<div id="item-slot-template">
+<div id="item-slot-template" class="iconlarge">
 	<div class="inventory-slot"></div>
 	<div class="icon"></div>
 	<div class="border"></div>
@@ -134,9 +134,7 @@
 	function createItemSlot(item, invSlot, icon, rel, container) {
 		const $template = $("#item-slot-template");
 		const $item = $template.clone(false);
-		$item
-			.removeAttr("id")
-			.addClass("iconlarge");
+		$item.removeAttr("id");
 		$item.find(".inventory-slot").css("background-image", `url("/img/inventory-slot/${invSlot}.png")`);
 		if (item !== undefined) {
 			$item.find(".icon").css("background-image", `url("{{aowow}}/static/images/wow/icons/large/${icon}.jpg")`);
