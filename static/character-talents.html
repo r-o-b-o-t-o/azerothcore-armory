@@ -40,20 +40,28 @@
 	</div>
 </div>
 
+<div id="spec-links">
+	<a href="#0" id="link-spec-0">Primary specialization</a>
+	&ensp;|&ensp;
+	<a href="#1" id="link-spec-1">Secondary specialization</a>
+</div>
+
 <div id="talents-spec-0">
 	<div>
 		<h3>Glyphs</h3>
 		<div class="glyphs"></div>
 	</div>
 </div>
-<br>
-<br>
-<br>
-<div id="talents-spec-1">
+<div id="talents-spec-1" style="display: none;">
 	<div>
 		<h3>Glyphs</h3>
 		<div class="glyphs"></div>
 	</div>
+</div>
+
+<div style="display: none;">
+	<!-- Hackfix for aowow's tooltip opening when the page loads -->
+	<a href="{{aowow}}/?spell=10"></a>
 </div>
 
 <script type="application/javascript">
@@ -91,6 +99,7 @@
 
 		if (nbLearned === 0) {
 			$(`#talents-spec-${spec}`).hide();
+			$("#spec-links").hide();
 			continue;
 		}
 
@@ -217,5 +226,19 @@
 		$arrow.css("background-image", `url("{{aowow}}/static/images/TalentCalc/arrows/${file}.png")`);
 		$arrow.css("background-position", bgPos);
 		$(container).append($arrow);
+	}
+
+	$("#link-spec-0").on("click", () => {
+		$("#talents-spec-0").show();
+		$("#talents-spec-1").hide();
+	});
+
+	$("#link-spec-1").on("click", () => {
+		$("#talents-spec-1").show();
+		$("#talents-spec-0").hide();
+	});
+
+	if (location.hash === "#1") {
+		$("#link-spec-1").click();
 	}
 </script>

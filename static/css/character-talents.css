@@ -127,3 +127,7 @@
 	flex-direction: column;
 	gap: 14px;
 }
+
+#spec-links {
+	margin-bottom: 32px;
+}
