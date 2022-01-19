@@ -1,1 +1,72 @@
-Armory
+<link rel="stylesheet" href="/css/index.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/1.11.3/css/jquery.dataTables.min.css">
+<link rel="stylesheet" href="/css/datatables.css">
+<script type="application/javascript" src="https://cdn.datatables.net/1.11.3/js/jquery.dataTables.min.js"></script>
+
+<h1>Armory</h1>
+
+{{#if (not (equalsLength realms 1))}}
+<select id="select-realm">
+	{{#each realms}}
+	<option>{{this}}</option>
+	{{/each}}
+</select>
+{{/if}}
+
+<table id="results" class="stripe hover row-border">
+	<thead>
+		<tr>
+			<th>Character name</th>
+			<th>Guild</th>
+			<th>Level</th>
+			<th>Race</th>
+			<th>Class</th>
+			<th>Online</th>
+		</tr>
+	</thead>
+	<tbody></tbody>
+</table>
+
+<script type="application/javascript">
+	let dt;
+
+	function initDataTables() {
+		dt = $("#results").DataTable({
+			processing: true,
+			serverSide: true,
+			ajax: {
+				url: `/search`,
+				data: d => {
+					d.realm = $("#select-realm").val();
+				},
+			},
+			columnDefs: [
+				{
+					targets: 0,
+					render: name => `<a href="/character/${$("#select-realm").val()}/${name}">${name}</a>`,
+				},
+				{
+					searchable: false,
+					targets: 3,
+					render: data => `<img src="{{aowow}}/static/images/wow/icons/medium/race_${data}.jpg">`,
+				},
+				{
+					searchable: false,
+					targets: 4,
+					render: data => `<img src="{{aowow}}/static/images/wow/icons/medium/class_${data}.jpg">`,
+				},
+				{
+					searchable: false,
+					targets: 5,
+					render: online => online ? "🟢" : "🔴",
+				},
+			],
+		});
+	}
+
+	$("#select-realm").on("change", () => {
+		dt.draw();
+	});
+
+	initDataTables();
+</script>

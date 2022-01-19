@@ -1,0 +1,235 @@
+import { Query } from "express-serve-static-core";
+import { Connection, RowDataPacket } from "mysql2/promise";
+
+export interface IResult {
+	recordsTotal: number;
+	recordsFiltered: number;
+	data: any[][];
+}
+
+export interface IColumnSettings {
+	name: string;
+	collation?: string;
+	formatter?: (data: string | number | null, row: any) => string;
+	table?: string;
+}
+
+export interface IColumnJoin {
+	table1: string;
+	column1: string;
+	table2: string;
+	column2: string;
+	kind: "INNER" | "FULL OUTER" | "LEFT" | "RIGHT";
+}
+
+export class DataTablesSsp {
+	public draw: number;
+	public joins: IColumnJoin[] = [];
+	public extraDataColumns: string[] = [];
+
+	private db: Connection;
+	private table: string;
+	private primaryKey: string;
+	private columnSettings: IColumnSettings[];
+
+	private start: number;
+	private length: number;
+	private _order: {
+		column: number,
+		dir: string,
+	}[];
+	private columns: {
+		data: number,
+		name: string,
+		searchable: boolean,
+		orderable: boolean,
+		search: {
+			value: string,
+			regex: boolean,
+		}
+	}[];
+	private search: {
+		value: string,
+		regex: boolean,
+	};
+
+	private wheres: string[] = [];
+	private filterBindings: (string | number)[] = [];
+	private customBindings: (string | number)[] = [];
+	private filterWhereSql: string = "1";
+	private customWhereSql: string = "1";
+	private limitSql: string = "";
+	private orderSql: string = "";
+	private joinSql: string = "";
+
+	public constructor(query: Query, db: Connection, table: string, primaryKey: string, columnSettings: IColumnSettings[]) {
+		this.start = parseInt(query.start as string, 10);
+		this.length = parseInt(query.length as string, 10);
+		this.draw = parseInt(query.draw as string, 10);
+		this._order = (query.order as { column: string, dir: string }[])
+			.map(order => { return { column: parseInt(order.column, 10), dir: order.dir, }; });
+		this.columns = (query.columns as { data: string, name: string, searchable: string, orderable: string, search: any }[])
+			.map(column => {
+				return {
+					data: parseInt(column.data, 10),
+					name: column.name,
+					searchable: column.searchable === "true",
+					orderable: column.orderable === "true",
+					search: { value: column.search.value, regex: column.search.regex === "true" },
+				};
+			});
+		this.search = {
+			value: (query.search as any).value as string,
+			regex: (query.search as any).regex === "true",
+		};
+
+		this.db = db;
+		this.table = table;
+		this.primaryKey = primaryKey;
+		this.columnSettings = columnSettings;
+	}
+
+	private limit() {
+		if (this.start !== undefined && this.length !== -1) {
+			this.limitSql = `LIMIT ${this.length} OFFSET ${this.start}`;
+		}
+		return this;
+	}
+
+	private order() {
+		if (this._order === undefined) {
+			return this;
+		}
+
+		const orderBy = [];
+		for (const order of this._order) {
+			const requestColumn = this.columns[order.column];
+			if (!requestColumn.orderable) {
+				continue;
+			}
+
+			const colSettings = this.columnSettings[requestColumn.data];
+			orderBy.push(`\`${colSettings.table || this.table}\`.\`${colSettings.name}\` ${order.dir}`);
+		}
+		orderBy.push(`\`${this.table}\`.\`${this.primaryKey}\``);
+
+		if (orderBy.length > 0) {
+			this.orderSql = "ORDER BY " + orderBy.join(", ");
+		}
+
+		return this;
+	}
+
+	private join() {
+		for (const join of this.joins) {
+			this.joinSql += `${join.kind} JOIN \`${join.table2}\` ON \`${join.table2}\`.\`${join.column2}\` = \`${join.table1}\`.\`${join.column1}\`\n`;
+		}
+
+		return this;
+	}
+
+	private filter() {
+		if (this.search.value?.length > 0) {
+			const filterWheres = [];
+			this.filterBindings = [];
+
+			for (const col of this.columns) {
+				if (!col.searchable) {
+					continue;
+				}
+
+				const colSettings = this.columnSettings[col.data];
+				const collate = colSettings.collation !== undefined ? `COLLATE ${colSettings.collation} ` : "";
+				filterWheres.push(`\`${colSettings.table || this.table}\`.\`${colSettings.name}\` ${collate}LIKE ?`);
+				this.filterBindings.push(`%${this.search.value}%`);
+			}
+			if (filterWheres.length > 0) {
+				this.filterWhereSql = "(" + filterWheres.map(w => `(${w})`).join(" OR ") + ")";
+			}
+		}
+
+		this.customWhereSql = this.wheres.map(w => `(${w})`).join(" AND ");
+		return this;
+	}
+
+	private buildSql(): string {
+		const columns = [
+			...this.columnSettings.map(c => `\`${c.table || this.table}\`.\`${c.name}\``),
+			...this.extraDataColumns,
+		];
+		return `
+			SELECT ${columns.join(", ")}
+			FROM ${this.table}
+			${this.joinSql}
+			WHERE
+				${this.filterWhereSql} AND
+				${this.customWhereSql}
+			${this.orderSql}
+			${this.limitSql}
+		`;
+	}
+
+	private buildTotalCountSql(): string {
+		return `
+			SELECT COUNT(\`${this.table}\`.\`${this.primaryKey}\`) AS \`count\`
+			FROM ${this.table}
+			${this.joinSql}
+			WHERE ${this.customWhereSql}
+		`;
+	}
+
+	private buildFilteredCountSql(): string {
+		return `
+			SELECT COUNT(\`${this.table}\`.\`${this.primaryKey}\`) AS \`count\`
+			FROM ${this.table}
+			${this.joinSql}
+			WHERE
+				${this.filterWhereSql} AND
+				${this.customWhereSql}
+		`;
+	}
+
+	public async run(): Promise<IResult> {
+		this.limit()
+			.order()
+			.join()
+			.filter();
+
+		const bindings = [...this.filterBindings, ...this.customBindings];
+
+		let [rows, fields] = await this.db.query(this.buildTotalCountSql(), this.customBindings);
+		const recordsTotal = rows[0].count;
+
+		[rows, fields] = await this.db.query(this.buildFilteredCountSql(), bindings);
+		const recordsFiltered = rows[0].count;
+
+		[rows, fields] = await this.db.query({
+			sql: this.buildSql(),
+			rowsAsArray: true,
+			values: bindings,
+		});
+		rows = (rows as any[][]).map(row => {
+			for (let i = 0; i < this.columnSettings.length; ++i) {
+				const col = this.columnSettings[i];
+				if (col.formatter !== undefined) {
+					row[i] = col.formatter(row[i], row);
+				}
+			}
+			return row;
+		});
+
+		return {
+			recordsTotal,
+			recordsFiltered,
+			data: rows,
+		};
+	}
+
+	public where(condition: string, binding?: string | number) {
+		this.wheres.push(condition);
+		if (binding !== undefined) {
+			this.customBindings.push(binding);
+		}
+		return this;
+	}
+}

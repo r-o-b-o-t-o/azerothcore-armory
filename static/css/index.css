@@ -1,0 +1,11 @@
+#select-realm {
+	margin-bottom: 16px;
+}
+
+#results {
+	width: 100% !important;
+}
+
+#results td {
+	text-align: center;
+}

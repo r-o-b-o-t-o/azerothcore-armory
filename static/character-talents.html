@@ -68,6 +68,8 @@
 	const talentsData = JSON.parse(`{{{data}}}`);
 
 	for (let spec = 0; spec < 2; ++spec) {
+		const $spec = $(`#talents-spec-${spec}`);
+
 		let nbLearned = 0;
 		for (const tree of talentsData.trees) {
 			const learned = {};
@@ -90,7 +92,7 @@
 			const $tree = $("#talent-tree-template")
 				.clone(false)
 				.removeAttr("id")
-				.prependTo($(`#talents-spec-${spec}`));
+				.appendTo($spec);
 			$tree.find(".header .icon").attr("src", `{{aowow}}/static/images/wow/icons/medium/${tree.icon}.jpg`);
 			$tree.find(".header .name").text(tree.name);
 
@@ -98,18 +100,19 @@
 		}
 
 		if (nbLearned === 0) {
-			$(`#talents-spec-${spec}`).hide();
+			$spec.hide();
 			$("#spec-links").hide();
 			continue;
 		}
 
-		const $glyphs = $(`#talents-spec-${spec}`).find(".glyphs");
+		const $glyphs = $spec.find(".glyphs");
 		for (const spell of talentsData.glyphs[spec]) {
 			const $a = $("<a>");
 			$a.attr("href", `{{aowow}}?spell=${spell}`);
 			$glyphs.append($a);
 			$glyphs.append("<br>");
 		}
+		$glyphs.parent().appendTo($spec);
 	}
 
 	function createTree(data, learnedTalents, container) {

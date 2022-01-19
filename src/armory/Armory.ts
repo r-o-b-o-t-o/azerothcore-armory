@@ -65,6 +65,7 @@ export class Armory {
 
 		const indexController = new IndexController(this);
 		app.get("/", indexController.index.bind(indexController));
+		app.get("/search", indexController.search.bind(indexController));
 
 		const charsController = new CharacterController(this);
 		await charsController.load();
