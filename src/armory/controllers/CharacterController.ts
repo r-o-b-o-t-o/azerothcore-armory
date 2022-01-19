@@ -16,6 +16,7 @@ interface ICharacterData {
 	hairStyle: number;
 	hairColor: number;
 	facialStyle: number;
+	playerFlags: number;
 	online: number;
 }
 
@@ -143,6 +144,7 @@ export class CharacterController {
 				race: charData.race,
 				gender: charData.gender,
 				class: charData.class,
+				flags: charData.playerFlags,
 				characterModelItems: await this.getModelViewerItems(equipmentData, charData.class),
 				customizationOptions: customization,
 				equipment,
@@ -198,7 +200,7 @@ export class CharacterController {
 
 	private async getCharacterData(realm: string, charName: string): Promise<ICharacterData> {
 		const [rows, fields] = await this.armory.getCharactersDb(realm).query(`
-			SELECT guid, name, race, class, gender, level, skin, face, hairStyle, hairColor, facialStyle, online
+			SELECT guid, name, race, class, gender, level, skin, face, hairStyle, hairColor, facialStyle, playerFlags, online
 			FROM characters
 			WHERE LOWER(name) = LOWER(?)
 		`, [charName]);

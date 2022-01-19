@@ -65,6 +65,11 @@
 	};
 	const genders = ["male", "female"];
 
+	const hideHelm = (charData.flags & 0x0400) === 0x0400;
+	$("#cb-hide-helmet").prop("checked", hideHelm);
+	const hideCloak = (charData.flags & 0x0800) === 0x0800;
+	$("#cb-hide-cloak").prop("checked", hideCloak);
+
 	const characterModel = {
 		type: ZamModelViewer.WOW,
 		contentPath: "/data/",
@@ -80,7 +85,7 @@
 			sheathOff: -1,
 		},
 		cls: charData.class,
-		items: charData.characterModelItems,
+		items: charData.characterModelItems.filter(item => !((item[0] === 1 && hideHelm) || (item[0] === 16 && hideCloak))),
 		models: {
 			type: ZamModelViewer.Wow.Types.CHARACTER,
 			id: `${races[charData.race]}${genders[charData.gender]}`,
