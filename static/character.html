@@ -160,6 +160,9 @@
 				if (item.enchantments.length !== 0) {
 					rel.push("ench=" + item.enchantments.join(":"));
 				}
+				if (item.randomPropertyId !== 0) {
+					rel.push("rand=" + item.randomPropertyId);
+				}
 			}
 			createItemSlot(item?.itemEntry, slot, item?.icon?.toLowerCase(), rel.join("&"), side.element);
 		}
