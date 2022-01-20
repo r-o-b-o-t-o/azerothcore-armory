@@ -43,7 +43,7 @@
 			columnDefs: [
 				{
 					targets: 0,
-					render: name => `<a href="/character/${$("#select-realm").val()}/${name}">${name}</a>`,
+					render: (name, type, row, meta) => `<a href="/character/${meta.settings.json.realm}/${name}">${name}</a>`,
 				},
 				{
 					searchable: false,

@@ -79,10 +79,8 @@ export class IndexController {
 		const result = await ssp
 			.where("`deleteInfos_Account` IS NULL")
 			.run();
+		(result as any).realm = realm.name;
 
-		res.json({
-			draw: ssp.draw,
-			...result,
-		});
+		res.json(result);
 	}
 }

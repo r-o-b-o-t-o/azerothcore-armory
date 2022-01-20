@@ -4,6 +4,7 @@ import { Connection, RowDataPacket } from "mysql2/promise";
 export interface IResult {
 	recordsTotal: number;
 	recordsFiltered: number;
+	draw: number;
 	data: any[][];
 }
 
@@ -221,6 +222,7 @@ export class DataTablesSsp {
 		return {
 			recordsTotal,
 			recordsFiltered,
+			draw: this.draw,
 			data: rows,
 		};
 	}
