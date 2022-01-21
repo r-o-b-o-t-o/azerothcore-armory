@@ -87,7 +87,7 @@
 			createTree(tree, learned, $tree[0]);
 		}
 
-		if (nbLearned === 0) {
+		if (nbLearned === 0 && spec !== 0) {
 			$spec.hide();
 			$("#spec-links").hide();
 			continue;
