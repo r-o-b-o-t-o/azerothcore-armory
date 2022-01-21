@@ -1,17 +1,5 @@
-<link rel="stylesheet" href="/css/character-talents.css">
-<style>
-	.iconmedium a {
-		background: url("{{aowow}}/static/images/Icon/medium/hilite/default.png") no-repeat 38px 0;
-	}
-
-	.iconmedium .border {
-		background-image: url("{{aowow}}/static/images/Icon/medium/border/default.png");
-	}
-
-	.iconmedium .icon-border {
-		background-image: url("{{aowow}}/static/images/TalentCalc/border.gif");
-	}
-</style>
+<link rel="stylesheet" type="text/css" href="/css/character-talents.css">
+{{> icons }}
 <script type="application/javascript">
 	const aowow_tooltips = { "renamelinks": true, };
 </script>
@@ -19,8 +7,8 @@
 
 {{> character-header }}
 
-<div id="talent-template" class="iconmedium empty">
-	<div class="talent"></div>
+<div id="talent-template" class="iconmedium icontalent empty">
+	<div class="icon"></div>
 	<div class="border"></div>
 	<div class="icon-border"></div>
 	<a target="_blank"></a>
@@ -140,7 +128,7 @@
 			const $template = $("#talent-template");
 			const $talent = $template.clone(false);
 			$talent.removeAttr("id");
-			$talent.find(".talent").css("background-image", `url("{{aowow}}/static/images/wow/icons/medium/${spell.icon}.jpg")`);
+			$talent.find(".icon").css("background-image", `url("{{aowow}}/static/images/wow/icons/medium/${spell.icon}.jpg")`);
 			const rank = spell.id in learnedTalents ? (learnedTalents[spell.id].rank - 1) : 0;
 			$talent.find("a").attr("href", `{{aowow}}/?spell=${spell["spellRank" + rank]}`);
 			$talent.data("id", spell.id);

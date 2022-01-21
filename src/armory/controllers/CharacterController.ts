@@ -33,7 +33,14 @@ interface ICustomizationOption {
 	choiceId: number;
 }
 
-const ITEM_CLASS_GEM = 3;
+interface IMount {
+	creatureDisplayId: number;
+	spell: number;
+	icon: string;
+}
+
+const ItemClassGem = 3;
+const SpellMechanicMounted = 21;
 const RaceDisplayName = {
 	1: "Human",
 	2: "Orc",
@@ -66,6 +73,8 @@ export class CharacterController {
 	private gemItems: { [key: number]: boolean };
 	private enchantSrcItems: { [key: number]: number };
 	private itemSocketBonuses: { [key: number]: number };
+	private mountSpells: number[];
+	private mountBySpellId: { [key: number]: IMount };
 
 	public constructor(armory: Armory) {
 		this.armory = armory;
@@ -94,7 +103,7 @@ export class CharacterController {
 		}
 
 		this.gemItems = {};
-		for await (const row of this.armory.dbc.item().filter(item => item.classId === ITEM_CLASS_GEM)) {
+		for await (const row of this.armory.dbc.item().filter(item => item.classId === ItemClassGem)) {
 			this.gemItems[row.id] = true;
 		}
 
@@ -107,6 +116,26 @@ export class CharacterController {
 		let [rows, fields] = await this.armory.worldDb.query("SELECT entry, socketBonus FROM item_template WHERE socketBonus <> 0");
 		for (const row of rows as RowDataPacket[]) {
 			this.itemSocketBonuses[row.entry] = row.socketBonus;
+		}
+
+		const mountSpells = await this.armory.dbc.spell()
+			.filter(m => m.mechanic === SpellMechanicMounted)
+			.toArray();
+		this.mountSpells = mountSpells.map(spell => spell.id);
+		this.mountBySpellId = {};
+		for (const spell of mountSpells) {
+			const mount = await this.armory.dbc.mount().find(m => m.sourceSpellId === spell.id);
+			const icon = await this.armory.dbc.spellIcon().find(icon => icon.id === spell.spellIconId);
+			if (mount !== undefined) {
+				const display = await this.armory.dbc.mountDisplay().find(d => d.mountId === mount.id);
+				if (display !== undefined) {
+					this.mountBySpellId[spell.id] = {
+						creatureDisplayId: display.creatureDisplayInfoId,
+						spell: spell.id,
+						icon: this.processSpellIconTexture(icon?.textureFilename ?? ""),
+					};
+				}
+			}
 		}
 	}
 
@@ -136,6 +165,7 @@ export class CharacterController {
 			(row as any).enchantments = this.filterEnchantments(row.itemEntry, row.enchantments);
 			return row;
 		});
+		const mounts = await this.getMounts(realmName, charData.guid);
 
 		res.render("character.html", {
 			title: `Armory - ${charName}`,
@@ -148,6 +178,7 @@ export class CharacterController {
 				characterModelItems: await this.getModelViewerItems(equipmentData, charData.class),
 				customizationOptions: customization,
 				equipment,
+				mounts,
 			}),
 		});
 
@@ -219,6 +250,18 @@ export class CharacterController {
 			WHERE character_inventory.guid = ? AND character_inventory.bag = 0 AND character_inventory.slot IN (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18)
 		`, [charGuid]);
 		return rows as RowDataPacket[] as IEquipmentData[];
+	}
+
+	private async getMounts(realm: string, charGuid: number): Promise<IMount[]> {
+		const [rows, fields] = await this.armory.getCharactersDb(realm).query(`
+			SELECT spell
+			FROM character_spell
+			WHERE guid = ? AND spell IN (?)
+		`, [charGuid, this.mountSpells]);
+
+		return (rows as RowDataPacket[])
+			.map(row => this.mountBySpellId[row.spell])
+			.filter(m => m !== undefined);
 	}
 
 	private async getModelViewerItems(equipmentData: IEquipmentData[], charClass: number): Promise<number[][]> {

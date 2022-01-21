@@ -1,13 +1,5 @@
-<link rel="stylesheet" href="/css/character.css">
-<style>
-	.iconlarge .border {
-		background-image: url("{{aowow}}/static/images/Icon/large/border/default.png");
-	}
-
-	.iconlarge a {
-		background: url("{{aowow}}/static/images/Icon/large/hilite/default.png") no-repeat 62px 0;
-	}
-</style>
+<link rel="stylesheet" type="text/css" href="/css/character.css">
+{{> icons }}
 
 <script type="application/javascript" src="/js/viewer.min.js"></script>
 <script type="application/javascript" src="{{aowow}}/static/widgets/power.js"></script>
@@ -25,17 +17,32 @@
 	<div style="flex: 12%;"></div>
 </div>
 
-<input id="cb-hide-helmet" type="checkbox">
-<label for="cb-hide-helmet">Hide helmet</label>
-<br>
+<table id="char-options">
+	<tr>
+		<td>
+			<input id="cb-hide-helmet" type="checkbox">
+			<label for="cb-hide-helmet">Hide helmet</label>
+			<br>
 
-<input id="cb-hide-cloak" type="checkbox">
-<label for="cb-hide-cloak">Hide cloak</label>
-<br>
+			<input id="cb-hide-cloak" type="checkbox">
+			<label for="cb-hide-cloak">Hide cloak</label>
+			<br>
 
-<input id="cb-hide-tabard" type="checkbox">
-<label for="cb-hide-tabard">Hide tabard</label>
-<br>
+			<input id="cb-hide-tabard" type="checkbox">
+			<label for="cb-hide-tabard">Hide tabard</label>
+		</td>
+
+		<td id="mounts-container">
+			<button id="btn-mounts">Mounts</button>
+			<div id="mount-template" class="iconmedium">
+				<div class="icon"></div>
+				<div class="border"></div>
+				<a target="_blank"></a>
+			</div>
+			<div id="mounts" style="display: none;"></div>
+		</td>
+	</tr>
+</table>
 
 <div id="item-slot-template" class="iconlarge">
 	<div class="inventory-slot"></div>
@@ -92,11 +99,16 @@
 		},
 		mount: {
 			type: ZamModelViewer.Wow.Types.NPC,
-			//id: 25280,
 			id: 0,
 		},
 	};
-	const viewer = new ZamModelViewer(characterModel);
+	let viewer;
+
+	function createViewer() {
+		viewer?.destroy();
+		viewer = new ZamModelViewer(characterModel);
+	}
+	createViewer();
 
 	$("#cb-hide-helmet").change(() => {
 		const hide = $("#cb-hide-helmet").prop("checked");
@@ -124,6 +136,7 @@
 
 	function clearSlots(slots) {
 		viewer.method("clearSlots", slots.join(","));
+		characterModel.items = characterModel.items.filter(item => !slots.includes(item[0]));
 	}
 
 	function setItems(items) {
@@ -134,6 +147,9 @@
 			};
 		});
 		viewer.method("setItems", [data]);
+
+		characterModel.items = characterModel.items.filter(item => !items.some(item2 => item[0] === item2[0]));
+		characterModel.items.push(...items);
 	}
 
 	function createItemSlot(item, invSlot, icon, rel, container) {
@@ -172,4 +188,39 @@
 			createItemSlot(item?.itemEntry, slot, item?.icon?.toLowerCase(), rel.join("&"), side.element);
 		}
 	}
+
+	function setMount(mountId) {
+		if (characterModel.mount.id !== mountId) {
+			characterModel.mount.id = mountId;
+			createViewer();
+		}
+	}
+
+	if (charData.mounts.length === 0) {
+		$("#mounts-container").hide();
+	} else {
+		const $dismount = $("#mount-template").clone(false).removeAttr("id");
+		$dismount.find(".icon").css("background-image", `url("/img/UI-GearManager-LeaveItem-small.png")`);
+		$dismount.find("a")
+			.on("click", () => {
+				setMount(0);
+				return false;
+			});
+		$("#mounts").append($dismount);
+
+		for (const mount of charData.mounts) {
+			const $mount = $("#mount-template").clone(false).removeAttr("id");
+			$mount.find(".icon").css("background-image", `url("{{aowow}}/static/images/wow/icons/medium/${mount.icon}.jpg")`);
+			$mount.find("a")
+				.attr("href", `{{aowow}}/?spell=${mount.spell}`)
+				.on("click", () => {
+					setMount(mount.creatureDisplayId);
+					return false;
+				});
+			$("#mounts").append($mount);
+		}
+	}
+	$("#btn-mounts").on("click", () => {
+		$("#mounts").slideToggle("fast");
+	});
 </script>

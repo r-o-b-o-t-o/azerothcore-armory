@@ -300,7 +300,9 @@ async function readDbcData(): Promise<void> {
 
 	dbcMountDisplayByMountId = {};
 	for await (const row of dbc.mountDisplay()) {
-		dbcMountDisplayByMountId[row.mountId] = row;
+		if (!(row.mountId in dbcMountDisplayByMountId)) {
+			dbcMountDisplayByMountId[row.mountId] = row;
+		}
 	}
 }
 

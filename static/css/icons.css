@@ -1,0 +1,75 @@
+.iconmedium {
+	width: 44px;
+	height: 44px;
+	position: relative;
+	display: inline-block;
+	overflow: visible;
+}
+
+.iconmedium .icon {
+	width: 36px;
+	height: 36px;
+	left: 4px;
+	top: 4px;
+	position: absolute;
+	background-repeat: no-repeat;
+	z-index: -1;
+}
+
+.iconmedium .border {
+	width: 44px;
+	height: 44px;
+	left: 0px;
+	top: 0px;
+	background-repeat: no-repeat;
+}
+
+.iconmedium a {
+	width: 38px;
+	height: 38px;
+	position: absolute;
+	left: 3px;
+	top: 3px;
+}
+
+.iconmedium a:hover {
+	background-position: 0 0;
+}
+
+.iconlarge {
+	width: 68px;
+	height: 68px;
+	position: relative;
+	display: inline-block;
+}
+
+.iconlarge .icon {
+	width: 56px;
+	height: 56px;
+	left: 6px;
+	top: 6px;
+	position: absolute;
+	background-repeat: no-repeat;
+	z-index: -1;
+}
+
+.iconlarge .border {
+	width: 68px;
+	height: 68px;
+	position: absolute;
+	left: 0;
+	top: 0;
+	background-repeat: no-repeat;
+}
+
+.iconlarge a {
+	width: 62px;
+	height: 62px;
+	position: absolute;
+	left: 3px;
+	top: 3px;
+}
+
+.iconlarge a:hover {
+	background-position: 0 0;
+}
