@@ -61,6 +61,7 @@
 
 <script type="application/javascript">
 	let achievementsData = {};
+	let $openCategory;
 	const $achievementTemplate = $("#achievement-template").detach().removeAttr("id");
 	const $progressTemplate = $("#progress-template").detach().removeAttr("id");
 
@@ -69,18 +70,16 @@
 			.attr("href", "#")
 			.text(cat.nameLang0)
 			.on("click", () => {
+				if ($openCategory !== undefined && !$openCategory.data("children")[0].contains($a[0])) {
+					closeCategory();
+				}
+
 				const $children = $a.data("children");
 				if ($children !== undefined) {
+					$openCategory = $a;
 					if (!$children.is(":visible")) {
-						// Close the currently selected category
-						$("#categories .open")
-							.slideUp()
-							.removeClass("open");
-
 						// Open the clicked category
-						$children
-							.slideDown()
-							.addClass("open");
+						$children.slideDown();
 					}
 				} else {
 					openCategory(cat);
@@ -130,7 +129,18 @@
 		}
 	}
 
+	function closeCategory() {
+		if ($openCategory === undefined || $openCategory.data("children") === undefined) {
+			return;
+		}
+
+		$openCategory
+			.data("children")
+			.slideUp();
+	}
+
 	function openSummary() {
+		closeCategory();
 		$("#achievements").empty();
 		const achievements = Object.keys(achievementsData.earned)
 			.filter(key => achievementsData.earned.hasOwnProperty(key))
@@ -200,10 +210,10 @@
 		achievementsData = data;
 
 		const $summaryLink = $("<a>")
-				.attr("href", "#")
-				.text("Summary")
-				.on("click", openSummary)
-				.appendTo($("#categories"));
+			.attr("href", "#")
+			.text("Summary")
+			.on("click", openSummary)
+			.appendTo($("#categories"));
 
 		for (const cat of achievementsData.categories.filter(c => c.parent < 0)) {
 			if (cat.id === 1) {
