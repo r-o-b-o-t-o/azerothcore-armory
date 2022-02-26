@@ -39,7 +39,7 @@ export class Armory {
 		console.log("Connecting to databases...");
 		this.worldDb = await createConnection(this.config.worldDatabase);
 		for (const realm of this.config.realms) {
-			this.charsDbs[realm.name.toLowerCase()] = await createConnection(realm.database);
+			this.charsDbs[realm.name.toLowerCase()] = await createConnection(realm.charactersDatabase);
 		}
 
 		console.log("Starting server...");
@@ -49,7 +49,6 @@ export class Armory {
 			partialsDir: path.join(process.cwd(), "static", "partials"),
 			layoutsDir: path.join(process.cwd(), "static"),
 			defaultLayout: "layout.html",
-			helpers: require("handlebars-helpers")(),
 		}));
 		app.set("view engine", "handlebars");
 		app.set("views", path.join(process.cwd(), "static"));

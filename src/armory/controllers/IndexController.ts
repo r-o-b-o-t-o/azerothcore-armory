@@ -30,9 +30,11 @@ const classFiles = {
 
 export class IndexController {
 	private armory: Armory;
+	private charsetCache: { [key: string]: string };
 
 	public constructor(armory: Armory) {
 		this.armory = armory;
+		this.charsetCache = {};
 	}
 
 	public async index(req: express.Request, res: express.Response): Promise<void> {
@@ -53,18 +55,22 @@ export class IndexController {
 		}
 
 		const db = this.armory.getCharactersDb(realm.name);
-		let [rows, fields] = await db.query(`
-			SELECT CCSA.character_set_name FROM information_schema.\`TABLES\` T,
-			information_schema.\`COLLATION_CHARACTER_SET_APPLICABILITY\` CCSA
-			WHERE CCSA.collation_name = T.table_collation
-			AND T.table_schema = "${db.config.database}"
-			AND T.table_name = "characters"
-		`);
-		const charSet = rows[0].character_set_name;
 
-		const ssp = new DataTablesSsp(req.query, db, "characters", "guid", [
+		if (!(realm.name in this.charsetCache)) {
+			let [rows, fields] = await db.query(`
+				SELECT CCSA.character_set_name FROM information_schema.\`TABLES\` T,
+				information_schema.\`COLLATION_CHARACTER_SET_APPLICABILITY\` CCSA
+				WHERE CCSA.collation_name = T.table_collation
+				AND T.table_schema = "${db.config.database}"
+				AND T.table_name = "characters"
+			`);
+			this.charsetCache[realm.name] = rows[0].character_set_name;
+		}
+		const charSet = this.charsetCache[realm.name];
+
+		let ssp = new DataTablesSsp(req.query, db, "characters", "guid", [
 			{ name: "name", collation: `${charSet}_general_ci` },
-			{ name: "name", table: "guild" },
+			{ table: "guild", name: "name" },
 			{ name: "level" },
 			{ name: "race", formatter: (race, row) => `${raceFiles[race]}_${row[6] === 0 ? "male" : "female"}` },
 			{ name: "class", formatter: cls => classFiles[cls] },
@@ -75,6 +81,11 @@ export class IndexController {
 			{ table1: "guild_member", column1: "guildid", table2: "guild", column2: "guildid", kind: "LEFT" },
 		];
 		ssp.extraDataColumns = ["`characters`.`gender`"];
+
+		if (this.armory.config.hideGameMasters) {
+			ssp.joins.push({ table1: "characters", column1: "account", table2: "account_access", column2: "id", database2: realm.authDatabase, kind: "LEFT" });
+			ssp = ssp.where(`\`account_access\`.\`id\` IS NULL OR \`account_access\`.\`RealmID\` NOT IN (-1, ${realm.realmId}) OR \`account_access\`.\`gmlevel\` = 0`);
+		}
 
 		const result = await ssp
 			.where("`deleteInfos_Account` IS NULL")

@@ -11,12 +11,15 @@ export interface IDatabaseConfig {
 
 export interface IRealmConfig {
 	name: string;
-	database: IDatabaseConfig;
+	realmId: number;
+	authDatabase: string;
+	charactersDatabase: IDatabaseConfig;
 }
 
 export class Config {
 	public aowowUrl: string;
 	public loadDbcs: boolean;
+	public hideGameMasters: boolean;
 	public realms: IRealmConfig[];
 	public worldDatabase: IDatabaseConfig;
 

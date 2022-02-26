@@ -157,7 +157,7 @@ export class CharacterController {
 			return;
 		}
 
-		const charData = await this.getCharacterData(realmName, charName);
+		const charData = await this.getCharacterData(realm, charName);
 		if (charData === null) {
 			// Could not find character
 			res.sendStatus(404);
@@ -203,7 +203,7 @@ export class CharacterController {
 			return;
 		}
 
-		const charData = await this.getCharacterData(realm.name, charName);
+		const charData = await this.getCharacterData(realm, charName);
 		if (charData === null) {
 			// Could not find character
 			res.sendStatus(404);
@@ -232,7 +232,7 @@ export class CharacterController {
 			return;
 		}
 
-		const charData = await this.getCharacterData(realm.name, charName);
+		const charData = await this.getCharacterData(realm, charName);
 		if (charData === null) {
 			// Could not find character
 			res.sendStatus(404);
@@ -256,7 +256,7 @@ export class CharacterController {
 			return;
 		}
 
-		const charData = await this.getCharacterData(realm.name, character);
+		const charData = await this.getCharacterData(realm, character);
 		if (charData === null) {
 			// Could not find character
 			res.sendStatus(404);
@@ -285,13 +285,16 @@ export class CharacterController {
 		return this.armory.config.realms.find(r => r.name.toLowerCase() === realm.toLowerCase());
 	}
 
-	private async getCharacterData(realm: string, character: string | number): Promise<ICharacterData> {
+	private async getCharacterData(realm: IRealmConfig, character: string | number): Promise<ICharacterData> {
 		const where = typeof character === "string" ? "LOWER(name) = LOWER(?)" : "guid = ?";
-		const [rows, fields] = await this.armory.getCharactersDb(realm).query(`
-			SELECT guid, name, race, class, gender, level, skin, face, hairStyle, hairColor, facialStyle, playerFlags, online
-			FROM characters
-			WHERE ${where}
-		`, [character]);
+		const [rows, fields] = await this.armory.getCharactersDb(realm.name).query(`
+			SELECT \`guid\`, \`name\`, \`race\`, \`class\`, \`gender\`, \`level\`, \`skin\`, \`face\`, \`hairStyle\`, \`hairColor\`, \`facialStyle\`, \`playerFlags\`, \`online\`
+			FROM \`characters\`
+			LEFT JOIN \`${realm.authDatabase}\`.\`account_access\` ON \`account_access\`.\`id\` = \`characters\`.\`account\`
+			WHERE
+				${where}
+				AND (\`account_access\`.\`id\` IS NULL OR \`account_access\`.\`RealmID\` NOT IN (-1, ${realm.realmId}) OR \`account_access\`.\`gmlevel\` = 0 OR ? = 0)
+		`, [character, this.armory.config.hideGameMasters ? 1 : 0]);
 
 		if ((rows as RowDataPacket[]).length === 0) {
 			return null;

@@ -13,6 +13,7 @@ export interface IColumnSettings {
 	collation?: string;
 	formatter?: (data: string | number | null, row: any) => string;
 	table?: string;
+	database?: string;
 }
 
 export interface IColumnJoin {
@@ -20,6 +21,7 @@ export interface IColumnJoin {
 	column1: string;
 	table2: string;
 	column2: string;
+	database2?: string;
 	kind: "INNER" | "FULL OUTER" | "LEFT" | "RIGHT";
 }
 
@@ -90,6 +92,11 @@ export class DataTablesSsp {
 		this.columnSettings = columnSettings;
 	}
 
+	private colSettingsToStr(colSettings: IColumnSettings) {
+		const db = colSettings.database ? ("`" + colSettings.database + "`.") : "";
+		return `${db}\`${colSettings.table || this.table}\`.\`${colSettings.name}\``;
+	}
+
 	private limit() {
 		if (this.start !== undefined && this.length !== -1) {
 			this.limitSql = `LIMIT ${this.length} OFFSET ${this.start}`;
@@ -110,7 +117,7 @@ export class DataTablesSsp {
 			}
 
 			const colSettings = this.columnSettings[requestColumn.data];
-			orderBy.push(`\`${colSettings.table || this.table}\`.\`${colSettings.name}\` ${order.dir}`);
+			orderBy.push(`${this.colSettingsToStr(colSettings)} ${order.dir}`);
 		}
 		orderBy.push(`\`${this.table}\`.\`${this.primaryKey}\``);
 
@@ -123,7 +130,8 @@ export class DataTablesSsp {
 
 	private join() {
 		for (const join of this.joins) {
-			this.joinSql += `${join.kind} JOIN \`${join.table2}\` ON \`${join.table2}\`.\`${join.column2}\` = \`${join.table1}\`.\`${join.column1}\`\n`;
+			const db2 = join.database2 ? "`" + join.database2 + "`." : "";
+			this.joinSql += `${join.kind} JOIN ${db2}\`${join.table2}\` ON ${db2}\`${join.table2}\`.\`${join.column2}\` = \`${join.table1}\`.\`${join.column1}\`\n`;
 		}
 
 		return this;
@@ -141,7 +149,7 @@ export class DataTablesSsp {
 
 				const colSettings = this.columnSettings[col.data];
 				const collate = colSettings.collation !== undefined ? `COLLATE ${colSettings.collation} ` : "";
-				filterWheres.push(`\`${colSettings.table || this.table}\`.\`${colSettings.name}\` ${collate}LIKE ?`);
+				filterWheres.push(`${this.colSettingsToStr(colSettings)} ${collate}LIKE ?`);
 				this.filterBindings.push(`%${this.search.value}%`);
 			}
 			if (filterWheres.length > 0) {
@@ -153,9 +161,9 @@ export class DataTablesSsp {
 		return this;
 	}
 
-	private buildSql(): string {
+	public sql(): string {
 		const columns = [
-			...this.columnSettings.map(c => `\`${c.table || this.table}\`.\`${c.name}\``),
+			...this.columnSettings.map(c => this.colSettingsToStr(c)),
 			...this.extraDataColumns,
 		];
 		return `
@@ -205,7 +213,7 @@ export class DataTablesSsp {
 		const recordsFiltered = rows[0].count;
 
 		[rows, fields] = await this.db.query({
-			sql: this.buildSql(),
+			sql: this.sql(),
 			rowsAsArray: true,
 			values: bindings,
 		});
