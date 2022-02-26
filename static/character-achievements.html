@@ -11,8 +11,8 @@
 		<img id="total-points-icon" src="/img/UI-Achievement-TinyShield.png">
 	</div>
 </div>
-<br>
-<br>
+<br class="is-hidden-touch">
+<br class="is-hidden-touch">
 
 <div class="columns is-multiline">
 	<div class="column is-one-fifth-desktop is-full-tablet">
@@ -70,7 +70,7 @@
 			.attr("href", "#")
 			.text(cat.nameLang0)
 			.on("click", () => {
-				if ($openCategory !== undefined && !$openCategory.data("children")[0].contains($a[0])) {
+				if ($openCategory !== undefined && $openCategory !== $a && !$openCategory.data("children")[0].contains($a[0])) {
 					closeCategory();
 				}
 
@@ -81,9 +81,8 @@
 						// Open the clicked category
 						$children.slideDown();
 					}
-				} else {
-					openCategory(cat);
 				}
+				openCategory(cat);
 				return false;
 			});
 		return $a;
