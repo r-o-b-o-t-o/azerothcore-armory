@@ -66,9 +66,16 @@
 	border: 1px solid #ffcf00;
 }
 
-#talents-spec-0.hidden,
-#talents-spec-1.hidden {
+.talents-spec {
+	justify-content: center;
+}
+
+.talents-spec.hidden {
 	display: none;
+}
+
+.talents-spec .column {
+	max-width: 500px;
 }
 
 .talent-tree .header {
