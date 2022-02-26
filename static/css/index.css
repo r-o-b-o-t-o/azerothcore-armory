@@ -13,3 +13,12 @@
 #results_processing {
 	height: 70px;
 }
+
+#select-realm-container {
+	display: flex;
+}
+
+#select-realm-container .realm-label {
+	align-self: center;
+	margin-right: 4px;
+}

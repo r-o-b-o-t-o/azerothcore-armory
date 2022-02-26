@@ -3,15 +3,23 @@
 <link rel="stylesheet" type="text/css" href="/css/datatables.css">
 <script type="application/javascript" src="https://cdn.datatables.net/1.11.3/js/jquery.dataTables.min.js"></script>
 
-<h1>Armory</h1>
+<h1 class="title is-size-1">Armory</h1>
 
 {{#if (not (equalsLength realms 1))}}
-<select id="select-realm">
-	{{#each realms}}
-	<option>{{this}}</option>
-	{{/each}}
-</select>
+
+<div id="select-realm-container">
+	<span class="realm-label">Realm:</span>
+	<div class="select">
+		<select id="select-realm">
+			{{#each realms}}
+			<option>{{this}}</option>
+			{{/each}}
+		</select>
+	</div>
+</div>
 {{/if}}
+
+<br>
 
 <table id="results" class="stripe hover row-border">
 	<thead>
