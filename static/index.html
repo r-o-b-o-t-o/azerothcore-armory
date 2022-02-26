@@ -1,7 +1,10 @@
 <link rel="stylesheet" type="text/css" href="/css/index.css">
 <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.3/css/jquery.dataTables.min.css">
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.2.9/css/responsive.dataTables.min.css">
 <link rel="stylesheet" type="text/css" href="/css/datatables.css">
 <script type="application/javascript" src="https://cdn.datatables.net/1.11.3/js/jquery.dataTables.min.js"></script>
+<script type="application/javascript"
+	src="https://cdn.datatables.net/responsive/2.2.9/js/dataTables.responsive.min.js"></script>
 
 <h1 class="title is-size-1">Armory</h1>
 
@@ -27,8 +30,8 @@
 			<th>Character name</th>
 			<th>Guild</th>
 			<th>Level</th>
-			<th>Race</th>
 			<th>Class</th>
+			<th>Race</th>
 			<th>Online</th>
 		</tr>
 	</thead>
@@ -57,12 +60,12 @@
 				{
 					searchable: false,
 					targets: 3,
-					render: data => `<img src="{{aowow}}/static/images/wow/icons/medium/race_${data}.jpg">`,
+					render: data => `<img src="{{aowow}}/static/images/wow/icons/medium/class_${data}.jpg">`,
 				},
 				{
 					searchable: false,
 					targets: 4,
-					render: data => `<img src="{{aowow}}/static/images/wow/icons/medium/class_${data}.jpg">`,
+					render: data => `<img src="{{aowow}}/static/images/wow/icons/medium/race_${data}.jpg">`,
 				},
 				{
 					searchable: false,
@@ -70,6 +73,9 @@
 					render: online => online ? "🟢" : "🔴",
 				},
 			],
+			responsive: {
+				details: true,
+			},
 		});
 	}
 

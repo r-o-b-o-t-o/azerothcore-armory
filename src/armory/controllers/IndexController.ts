@@ -72,8 +72,8 @@ export class IndexController {
 			{ name: "name", collation: `${charSet}_general_ci` },
 			{ table: "guild", name: "name" },
 			{ name: "level" },
-			{ name: "race", formatter: (race, row) => `${raceFiles[race]}_${row[6] === 0 ? "male" : "female"}` },
 			{ name: "class", formatter: cls => classFiles[cls] },
+			{ name: "race", formatter: (race, row) => `${raceFiles[race]}_${row[6] === 0 ? "male" : "female"}` },
 			{ name: "online", formatter: online => online === 1 },
 		]);
 		ssp.joins = [
