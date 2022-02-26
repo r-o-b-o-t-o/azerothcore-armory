@@ -2,3 +2,7 @@ html {
 	/* Removes the vertical scrollbar caused by Bulma */
 	overflow-y: auto;
 }
+
+.char-name.title {
+	margin-bottom: 0px;
+}

@@ -19,6 +19,7 @@ interface ICharacterData {
 	facialStyle: number;
 	playerFlags: number;
 	online: number;
+	guild: string;
 }
 
 interface IEquipmentData {
@@ -278,6 +279,7 @@ export class CharacterController {
 			class: ClassDisplayName[charData.class],
 			level: charData.level,
 			online: charData.online === 1,
+			guild: charData.guild,
 		};
 	}
 
@@ -286,10 +288,12 @@ export class CharacterController {
 	}
 
 	private async getCharacterData(realm: IRealmConfig, character: string | number): Promise<ICharacterData> {
-		const where = typeof character === "string" ? "LOWER(name) = LOWER(?)" : "guid = ?";
+		const where = typeof character === "string" ? "LOWER(`characters`.`name`) = LOWER(?)" : "`characters`.`guid` = ?";
 		const [rows, fields] = await this.armory.getCharactersDb(realm.name).query(`
-			SELECT \`guid\`, \`name\`, \`race\`, \`class\`, \`gender\`, \`level\`, \`skin\`, \`face\`, \`hairStyle\`, \`hairColor\`, \`facialStyle\`, \`playerFlags\`, \`online\`
+			SELECT \`characters\`.\`guid\`, \`characters\`.\`name\`, \`race\`, \`class\`, \`gender\`, \`level\`, \`skin\`, \`face\`, \`hairStyle\`, \`hairColor\`, \`facialStyle\`, \`playerFlags\`, \`online\`, \`guild\`.\`name\` AS \`guild\`
 			FROM \`characters\`
+			LEFT JOIN \`guild_member\` ON \`guild_member\`.\`guid\` = \`characters\`.\`guid\`
+			LEFT JOIN \`guild\` ON \`guild\`.\`guildid\` = \`guild_member\`.\`guildid\`
 			LEFT JOIN \`${realm.authDatabase}\`.\`account_access\` ON \`account_access\`.\`id\` = \`characters\`.\`account\`
 			WHERE
 				${where}

@@ -7,17 +7,16 @@
 <br>
 <br>
 
-<div class="char-name">
-	<span class="char-name">{{name}}</span>
-</div>
-<div>
+<div class="char-name title is-size-3">{{name}}</div>
+{{#if guild}}
+<a class="guild-name title is-size-4" href="/guild/{{guild}}">&lt;{{guild}}&gt;</a>
+{{/if}}
+<div class="is-size-5">
 	Level <span class="char-level">{{level}}</span>
 	<span class="char-race">{{race}}</span>
 	<span class="char-class">{{class}}</span>
 </div>
-<div>
-	<span class="char-realm">{{realm}}</span>
-</div>
+<div class="char-realm">{{realm}}</div>
 <div>
 	{{#if online}}
 	Online 🟢
