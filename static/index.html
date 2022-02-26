@@ -34,6 +34,7 @@
 		dt = $("#results").DataTable({
 			processing: true,
 			serverSide: true,
+			searchDelay: 800,
 			ajax: {
 				url: `/search`,
 				data: d => {
