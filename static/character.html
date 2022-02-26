@@ -6,45 +6,50 @@
 
 {{> character-header }}
 
-<div style="display: flex; max-width: 580px; height: 580px;">
-	<div id="equipment-col-left" style="flex: 12%;"></div>
-	<div id="model" style="flex: 76%; height: 100%;"></div>
-	<div id="equipment-col-right" style="flex: 12%;"></div>
+<div id="model-container">
+	<div id="equipment-col-left"></div>
+	<div id="model"></div>
+	<div id="equipment-col-right"></div>
 </div>
-<div style="display: flex; max-width: 580px; height: 70px; text-align: center;">
-	<div style="flex: 12%;"></div>
-	<div id="equipment-bottom" style="flex: 76%; height: 100%;"></div>
-	<div style="flex: 12%;"></div>
-</div>
+<div id="equipment-bottom"></div>
 
-<table id="char-options">
-	<tr>
-		<td>
+<span data-icon-size="large" class="icon-size is-hidden-mobile"></span>
+<span data-icon-size="medium" class="icon-size is-hidden-tablet"></span>
+
+<br>
+<div id="char-options" class="columns">
+	<div class="column is-one-quarter">
+		<label class="checkbox">
 			<input id="cb-hide-helmet" type="checkbox">
-			<label for="cb-hide-helmet">Hide helmet</label>
-			<br>
+			Hide helmet
+		</label>
+		<br>
 
+		<label class="checkbox">
 			<input id="cb-hide-cloak" type="checkbox">
-			<label for="cb-hide-cloak">Hide cloak</label>
-			<br>
+			Hide cloak
+		</label>
+		<br>
 
+		<label class="checkbox">
 			<input id="cb-hide-tabard" type="checkbox">
-			<label for="cb-hide-tabard">Hide tabard</label>
-		</td>
+			Hide tabard
+		</label>
+	</div>
 
-		<td id="mounts-container">
-			<button id="btn-mounts">Mounts</button>
-			<div id="mount-template" class="iconmedium">
-				<div class="icon"></div>
-				<div class="border"></div>
-				<a target="_blank"></a>
-			</div>
-			<div id="mounts" style="display: none;"></div>
-		</td>
-	</tr>
-</table>
+	<div id="mounts-container" class="column">
+		<button id="btn-mounts" class="button is-primary">Mounts</button>
 
-<div id="item-slot-template" class="iconlarge">
+		<div id="mount-template" class="iconmedium">
+			<div class="icon"></div>
+			<div class="border"></div>
+			<a target="_blank"></a>
+		</div>
+		<div id="mounts" class="box" style="display: none;"></div>
+	</div>
+</div>
+
+<div id="item-slot-template" class="item-slot">
 	<div class="inventory-slot"></div>
 	<div class="icon"></div>
 	<div class="border"></div>
@@ -52,6 +57,10 @@
 </div>
 
 <script type="application/javascript">
+	const $model = $("#model");
+	const $itemSlotTemplate = $("#item-slot-template").detach().removeAttr("id");
+	const $mountTemplate = $("#mount-template").detach().removeAttr("id");
+
 	window.WH = {
 		//debug: console.log,
 		debug: () => { },
@@ -77,39 +86,6 @@
 	const hideCloak = (charData.flags & 0x0800) === 0x0800;
 	$("#cb-hide-cloak").prop("checked", hideCloak);
 
-	const characterModel = {
-		type: ZamModelViewer.WOW,
-		contentPath: "/data/",
-		background: "background.png",
-		container: $("#model"),
-		hd: true,
-		aspect: 0.76,
-		charCustomization: {
-			race: charData.race,
-			gender: charData.gender,
-			options: charData.customizationOptions,
-			sheathMain: -1,
-			sheathOff: -1,
-		},
-		cls: charData.class,
-		items: charData.characterModelItems.filter(item => !((item[0] === 1 && hideHelm) || (item[0] === 16 && hideCloak))),
-		models: {
-			type: ZamModelViewer.Wow.Types.CHARACTER,
-			id: `${races[charData.race]}${genders[charData.gender]}`,
-		},
-		mount: {
-			type: ZamModelViewer.Wow.Types.NPC,
-			id: 0,
-		},
-	};
-	let viewer;
-
-	function createViewer() {
-		viewer?.destroy();
-		viewer = new ZamModelViewer(characterModel);
-	}
-	createViewer();
-
 	$("#cb-hide-helmet").change(() => {
 		const hide = $("#cb-hide-helmet").prop("checked");
 		setSlotVisible(1, !hide);
@@ -122,6 +98,12 @@
 		const hide = $("#cb-hide-tabard").prop("checked");
 		setSlotVisible(19, !hide);
 	});
+
+	let viewer;
+	function createViewer() {
+		viewer?.destroy();
+		viewer = new ZamModelViewer(characterModel);
+	}
 
 	function setSlotVisible(slot, visible) {
 		if (visible) {
@@ -153,12 +135,13 @@
 	}
 
 	function createItemSlot(item, invSlot, icon, rel, container) {
-		const $template = $("#item-slot-template");
-		const $item = $template.clone(false);
-		$item.removeAttr("id");
-		$item.find(".inventory-slot").css("background-image", `url("/img/inventory-slot/${invSlot}.png")`);
+		const $item = $itemSlotTemplate.clone();
+		$item
+			.data("icon", icon)
+			.find(".inventory-slot")
+			.css("background-image", `url("/img/inventory-slot/${invSlot}.png")`);
 		if (item !== undefined) {
-			$item.find(".icon").css("background-image", `url("{{aowow}}/static/images/wow/icons/large/${icon}.jpg")`);
+			$item.data("item", item);
 			$item.find("a").attr("href", `{{aowow}}/?item=${item}`);
 			$item.find("a").attr("rel", rel);
 		}
@@ -188,6 +171,32 @@
 			createItemSlot(item?.itemEntry, slot, item?.icon?.toLowerCase(), rel.join("&"), side.element);
 		}
 	}
+	const nbItemRows = Math.max($("#equipment-col-left").children().length, $("#equipment-col-right").children().length);
+
+	function onResize(init = false) {
+		const iconSize = $(".icon-size:visible").data("icon-size");
+		const iconSizePx = iconSize === "medium" ? 44 : 68;
+
+		$("#model-container").css("height", (iconSizePx * nbItemRows) + "px");
+
+		$(".item-slot")
+			.removeClass("iconmedium iconlarge")
+			.addClass(`icon${iconSize}`)
+			.each((idx, el) => {
+				const $item = $(el);
+				const item = $item.data("item");
+				const icon = $item.data("icon");
+				if (item !== undefined) {
+					$item.find(".icon").css("background-image", `url("{{aowow}}/static/images/wow/icons/${iconSize}/${icon}.jpg")`);
+				}
+			});
+
+		if (!init) {
+			characterModel.aspect = $model.outerWidth() / $model.outerHeight();
+			createViewer();
+		}
+	}
+	onResize(true);
 
 	function setMount(mountId) {
 		if (characterModel.mount.id !== mountId) {
@@ -199,7 +208,7 @@
 	if (charData.mounts.length === 0) {
 		$("#mounts-container").hide();
 	} else {
-		const $dismount = $("#mount-template").clone(false).removeAttr("id");
+		const $dismount = $mountTemplate.clone();
 		$dismount.find(".icon").css("background-image", `url("/img/UI-GearManager-LeaveItem.png")`);
 		$dismount.find("a")
 			.on("click", () => {
@@ -209,7 +218,7 @@
 		$("#mounts").append($dismount);
 
 		for (const mount of charData.mounts) {
-			const $mount = $("#mount-template").clone(false).removeAttr("id");
+			const $mount = $mountTemplate.clone();
 			$mount.find(".icon").css("background-image", `url("{{aowow}}/static/images/wow/icons/medium/${mount.icon}.jpg")`);
 			$mount.find("a")
 				.attr("href", `{{aowow}}/?spell=${mount.spell}`)
@@ -223,4 +232,51 @@
 	$("#btn-mounts").on("click", () => {
 		$("#mounts").slideToggle("fast");
 	});
+
+	const characterModel = {
+		type: ZamModelViewer.WOW,
+		contentPath: "/data/",
+		background: "background.png",
+		container: $model,
+		hd: true,
+		aspect: $model.outerWidth() / $model.outerHeight(),
+		charCustomization: {
+			race: charData.race,
+			gender: charData.gender,
+			options: charData.customizationOptions,
+			sheathMain: -1,
+			sheathOff: -1,
+		},
+		cls: charData.class,
+		items: charData.characterModelItems.filter(item => !((item[0] === 1 && hideHelm) || (item[0] === 16 && hideCloak))),
+		models: {
+			type: ZamModelViewer.Wow.Types.CHARACTER,
+			id: `${races[charData.race]}${genders[charData.gender]}`,
+		},
+		mount: {
+			type: ZamModelViewer.Wow.Types.NPC,
+			id: 0,
+		},
+	};
+	createViewer();
+
+	function debounce(func, timeout) {
+		let timer;
+		return (...args) => {
+			clearTimeout(timer);
+			timer = setTimeout(() => { func.apply(this, args); }, timeout);
+		};
+	}
+
+	let windowWidth = $(window).width();
+	$(window).resize(debounce(() => {
+		const newWidth = $(window).width();
+		if (windowWidth === newWidth) {
+			// Do nothing if only the height changed.
+			// This prevents triggering a resize when the navigation bar moves on mobile when scrolling.
+			return;
+		}
+		windowWidth = newWidth;
+		onResize();
+	}, 500));
 </script>

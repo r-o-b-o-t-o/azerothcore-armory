@@ -41,6 +41,7 @@
 	left: 30px;
 	font-size: 14px;
 	padding: 0px 2px;
+	z-index: 4;
 }
 
 .iconmedium.empty::after {

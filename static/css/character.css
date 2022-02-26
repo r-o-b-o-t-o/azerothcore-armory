@@ -1,27 +1,22 @@
-#item-slot-template,
-#mount-template {
-	display: none;
-}
-
-.iconlarge .inventory-slot {
-	width: 56px;
-	height: 56px;
-	left: 6px;
-	top: 6px;
-	position: absolute;
-	background-repeat: no-repeat;
-	z-index: 1;
-}
-
 .wowhead-tooltip .whtt-sellprice {
 	display: none;
 }
 
-#mounts {
-	max-width: 400px;
+#model-container,
+#equipment-bottom {
+	display: flex;
+	justify-content: center;
 }
 
-#char-options td {
-	vertical-align: top;
-	padding-right: 32px;
+#equipment-col-left,
+#equipment-col-right {
+	display: flex;
+	flex-direction: column;
+}
+
+#model,
+#model canvas {
+	touch-action: none;
+	height: 100% !important;
+	width: 100% !important;
 }
