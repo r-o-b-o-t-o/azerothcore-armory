@@ -9,3 +9,7 @@
 #results td {
 	text-align: center;
 }
+
+#results_processing {
+	height: 70px;
+}

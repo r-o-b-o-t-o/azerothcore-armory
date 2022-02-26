@@ -71,6 +71,8 @@ export class Armory {
 		await charsController.load();
 		app.get("/character/:realm/:name", charsController.character.bind(charsController));
 		app.get("/character/:realm/:name/talents", charsController.talents.bind(charsController));
+		app.get("/character/:realm/:name/achievements", charsController.achievements.bind(charsController));
+		app.get("/character/:realm/:character/achievements/data", charsController.achievementsData.bind(charsController));
 
 		this.gc();
 		app.listen(listenPort, "0.0.0.0", () => {

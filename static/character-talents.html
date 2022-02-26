@@ -20,11 +20,11 @@
 		<span class="name"></span>
 		<span class="points"></span>
 	</div>
-	<div class="columns">
-		<div class="column"></div>
-		<div class="column"></div>
-		<div class="column"></div>
-		<div class="column"></div>
+	<div class="cols">
+		<div class="col"></div>
+		<div class="col"></div>
+		<div class="col"></div>
+		<div class="col"></div>
 	</div>
 </div>
 
@@ -104,7 +104,7 @@
 	}
 
 	function createTree(data, learnedTalents, container) {
-		const $columns = $(container).find(".column");
+		const $columns = $(container).find(".col");
 		let points = 0;
 
 		for (let i = 0; i < 4; ++i) {

@@ -1,4 +1,4 @@
 html {
-	background-color: #202124;
-	color: white;
+	/* Removes the vertical scrollbar caused by Bulma */
+	overflow-y: auto;
 }

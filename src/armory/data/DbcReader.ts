@@ -8,6 +8,23 @@ export interface IGlyphProperties {
 	spellId: number;
 }
 
+export interface IAchievement {
+	id: number;
+	faction: number;
+	titleLang0: string;
+	descriptionLang0: string;
+	category: number;
+	points: number;
+	flags: number;
+	iconId: number;
+}
+
+export interface IAchievementCategory {
+	id: number;
+	parent: number;
+	nameLang0: string;
+}
+
 export interface IItemDbc {
 	id: number;
 	classId: number;
@@ -203,11 +220,7 @@ class DbcReader<T> {
 			.map(header => camelCase(header).replace(/[\[\]]/g, ""));
 
 		for await (const arr of itr) {
-			const cols = arr
-				.map(value => {
-					const parsed: number = parseInt(value, 10);
-					return isNaN(parsed) ? value : parsed;
-				});
+			const cols = arr.map(value => isNaN(value as any) ? value : parseInt(value, 10));
 			const row = {};
 			headerCols.forEach((header, headerIdx) => {
 				if (this.fields.length === 0 || this.fields.includes(header)) {
@@ -282,6 +295,8 @@ class DbcReader<T> {
 
 const dir = path.join(process.cwd(), "data");
 export const DbcFiles = {
+	achievement: path.join(dir, "Achievement_3.3.5_12340.csv"),
+	achievementCategory: path.join(dir, "AchievementCategory_3.3.5_12340.csv"),
 	glyphProperties: path.join(dir, "GlyphProperties_3.3.5_12340.csv"),
 	item: path.join(dir, "Item_3.3.5_12340.csv"),
 	itemRetail: path.join(dir, "Item_9.2.0_41462.csv"),
@@ -298,6 +313,8 @@ export const DbcFiles = {
 };
 
 const dbcFields = {
+	achievement: ["id", "faction", "titleLang0", "descriptionLang0", "category", "points", "flags", "iconId"],
+	achievementCategory: ["id", "parent", "nameLang0"],
 	glyphProperties: ["id", "spellId"],
 	item: ["id", "classId", "displayInfoId", "inventoryType"],
 	itemRetail: ["id", "inventoryType"],
@@ -314,6 +331,8 @@ const dbcFields = {
 };
 
 export class DbcManager {
+	private _achievement: IAchievement[];
+	private _achievementCategory: IAchievementCategory[];
 	private _glyphProperties: IGlyphProperties[];
 	private _item: IItemDbc[];
 	private _itemRetail: IItemRetailDbc[];
@@ -329,6 +348,8 @@ export class DbcManager {
 	private _talentTab: ITalentTab[];
 
 	public async loadAllFiles(): Promise<void> {
+		this._achievement = await this.read<IAchievement>(DbcFiles.achievement, dbcFields.achievement).toArray();
+		this._achievementCategory = await this.read<IAchievementCategory>(DbcFiles.achievementCategory, dbcFields.achievementCategory).toArray();
 		this._glyphProperties = await this.read<IGlyphProperties>(DbcFiles.glyphProperties, dbcFields.glyphProperties).toArray();
 		this._item = await this.read<IItemDbc>(DbcFiles.item, dbcFields.item).toArray();
 		this._itemRetail = await this.read<IItemRetailDbc>(DbcFiles.itemRetail, dbcFields.itemRetail).toArray();
@@ -342,6 +363,14 @@ export class DbcManager {
 		this._spellIcon = await this.read<ISpellIcon>(DbcFiles.spellIcon, dbcFields.spellIcon).toArray();
 		this._talent = await this.read<ITalent>(DbcFiles.talent, dbcFields.talent).toArray();
 		this._talentTab = await this.read<ITalentTab>(DbcFiles.talentTab, dbcFields.talentTab).toArray();
+	}
+
+	public achievement() {
+		return this.getLoadedDataOrRead(DbcFiles.achievement, this._achievement, dbcFields.achievement);
+	}
+
+	public achievementCategory() {
+		return this.getLoadedDataOrRead(DbcFiles.achievementCategory, this._achievementCategory, dbcFields.achievementCategory);
 	}
 
 	public glyphProperties() {

@@ -1,0 +1,101 @@
+#categories {
+	padding-right: 20px;
+}
+
+#categories a {
+	display: block;
+}
+
+.subcategories {
+	padding-left: 20px;
+}
+
+#achievement-template {
+	display: none;
+}
+
+#achievements {
+	width: 100%;
+	border-collapse: separate;
+	border-spacing: 1em 1.5em;
+}
+
+.achievement {
+	width: 100%;
+}
+
+.achievement td {
+	text-align: center !important;
+	vertical-align: middle;
+}
+
+.achievement.earned {
+	color: #ffffff;
+}
+
+.achievement .name {
+	text-decoration: none;
+}
+
+.achievement .name,
+.achievement .points,
+.achievement .description {
+	color: #afafaf;
+}
+
+.achievement .icon {
+	filter: grayscale(100%);
+	opacity: 0.7;
+}
+
+.achievement.earned .icon {
+	filter: none;
+	opacity: 1;
+}
+
+.achievement.earned .name,
+.achievement.earned .points,
+.achievement.earned .description {
+	color: #ffffff;
+}
+
+.achievement .points {
+	background-image: url("/img/UI-Achievement-Shields.png");
+	background-repeat: no-repeat;
+	width: 64px;
+	height: 64px;
+	background-position: -65px -4px;
+}
+
+.achievement.earned .points {
+	background-position: 0px -4px;
+}
+
+.achievement .points .value {
+	line-height: 32px;
+	position: relative;
+	top: 10px;
+	left: -1px;
+}
+
+.achievement .earned-date {
+	display: inline-block;
+	line-height: 32px;
+	position: relative;
+	top: 4px;
+	left: 50%;
+	transform: translateX(-50%);
+}
+
+.achievement .points.no-points {
+	background-image: url("/img/UI-Achievement-Shields-NoPoints.png");
+}
+
+.achievement .points.no-points .value {
+	visibility: hidden;
+}
+
+#total-points-icon {
+	position: relative;
+	margin-left: 2px;
+}

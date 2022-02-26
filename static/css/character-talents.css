@@ -79,12 +79,12 @@
 	margin-bottom: 16px;
 }
 
-.talent-tree .columns {
+.talent-tree .cols {
 	display: flex;
 	gap: 14px;
 }
 
-.talent-tree .columns .column {
+.talent-tree .cols .col {
 	text-align: center;
 	display: flex;
 	flex-direction: column;

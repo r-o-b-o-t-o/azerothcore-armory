@@ -3,6 +3,7 @@ import { RowDataPacket } from "mysql2/promise";
 
 import { Armory } from "../Armory";
 import { IRealmConfig } from "../Config";
+import { IAchievement } from "../data/DbcReader";
 
 interface ICharacterData {
 	guid: number;
@@ -75,6 +76,7 @@ export class CharacterController {
 	private itemSocketBonuses: { [key: number]: number };
 	private mountSpells: number[];
 	private mountBySpellId: { [key: number]: IMount };
+	private achievementById: { [key: number]: IAchievement };
 
 	public constructor(armory: Armory) {
 		this.armory = armory;
@@ -136,6 +138,11 @@ export class CharacterController {
 					};
 				}
 			}
+		}
+
+		this.achievementById = {};
+		for await (const achievement of this.armory.dbc.achievement()) {
+			this.achievementById[achievement.id] = achievement;
 		}
 	}
 
@@ -214,10 +221,59 @@ export class CharacterController {
 		});
 	}
 
+	public async achievements(req: express.Request, res: express.Response): Promise<void> {
+		const realmName = req.params.realm;
+		const charName = req.params.name;
+
+		const realm = this.getRealm(realmName);
+		if (realm === undefined) {
+			// Could not find realm
+			res.sendStatus(404);
+			return;
+		}
+
+		const charData = await this.getCharacterData(realm.name, charName);
+		if (charData === null) {
+			// Could not find character
+			res.sendStatus(404);
+			return;
+		}
+
+		res.render("character-achievements.html", {
+			title: `Armory - ${charName} - Achievements`,
+			...this.makeSharedDataObject(realm, charData),
+		});
+	}
+
+	public async achievementsData(req: express.Request, res: express.Response): Promise<void> {
+		const realmName = req.params.realm;
+		const character = parseInt(req.params.character) || -1;
+
+		const realm = this.getRealm(realmName);
+		if (realm === undefined) {
+			// Could not find realm
+			res.sendStatus(404);
+			return;
+		}
+
+		const charData = await this.getCharacterData(realm.name, character);
+		if (charData === null) {
+			// Could not find character
+			res.sendStatus(404);
+			return;
+		}
+
+		res.json({
+			categories: await this.armory.dbc.achievementCategory().toArray(),
+			...await this.getAchievements(realm.name, charData),
+		});
+	}
+
 	private makeSharedDataObject(realm: IRealmConfig, charData: ICharacterData) {
 		return {
 			realm: realm.name,
-			character: charData.name,
+			name: charData.name,
+			guid: charData.guid,
 			race: RaceDisplayName[charData.race],
 			class: ClassDisplayName[charData.class],
 			level: charData.level,
@@ -229,12 +285,13 @@ export class CharacterController {
 		return this.armory.config.realms.find(r => r.name.toLowerCase() === realm.toLowerCase());
 	}
 
-	private async getCharacterData(realm: string, charName: string): Promise<ICharacterData> {
+	private async getCharacterData(realm: string, character: string | number): Promise<ICharacterData> {
+		const where = typeof character === "string" ? "LOWER(name) = LOWER(?)" : "guid = ?";
 		const [rows, fields] = await this.armory.getCharactersDb(realm).query(`
 			SELECT guid, name, race, class, gender, level, skin, face, hairStyle, hairColor, facialStyle, playerFlags, online
 			FROM characters
-			WHERE LOWER(name) = LOWER(?)
-		`, [charName]);
+			WHERE ${where}
+		`, [character]);
 
 		if ((rows as RowDataPacket[]).length === 0) {
 			return null;
@@ -654,5 +711,42 @@ export class CharacterController {
 		}
 
 		return glyphs;
+	}
+
+	private async getAchievements(realm: string, charData: ICharacterData): Promise<{ achievements: any[]; earned: { [key: number]: any }; }> {
+		const faction = [1, 3, 4, 7, 11].includes(charData.race) ? 1 : 0;
+
+		const promises = await this.armory.dbc.achievement()
+			.filter(ach => ach.faction === -1 || ach.faction === faction)
+			.map(async (ach) => {
+				const icon = await this.armory.dbc.spellIcon().find(icon => icon.id === ach.iconId);
+				return {
+					id: ach.id,
+					category: ach.category,
+					title: ach.titleLang0,
+					description: ach.descriptionLang0,
+					points: ach.points,
+					icon: this.processSpellIconTexture(icon?.textureFilename ?? ""),
+				};
+			})
+			.toArray();
+		const achievements = await Promise.all(promises);
+
+		const [rows, fields] = await this.armory.getCharactersDb(realm).query(`
+			SELECT achievement, date
+			FROM character_achievement
+			WHERE guid = ?
+		`, [charData.guid]);
+		const earned = {};
+		for (const row of rows as RowDataPacket[]) {
+			earned[row.achievement] = {
+				date: row.date,
+			};
+		}
+
+		return {
+			achievements,
+			earned,
+		};
 	}
 }
