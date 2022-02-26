@@ -49,6 +49,7 @@ export class Armory {
 			partialsDir: path.join(process.cwd(), "static", "partials"),
 			layoutsDir: path.join(process.cwd(), "static"),
 			defaultLayout: "layout.html",
+			helpers: require("handlebars-helpers")(),
 		}));
 		app.set("view engine", "handlebars");
 		app.set("views", path.join(process.cwd(), "static"));

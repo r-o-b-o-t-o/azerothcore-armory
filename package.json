@@ -1,6 +1,6 @@
 {
 	"name": "azerothcore-armory",
-	"version": "0.6.0",
+	"version": "0.6.1",
 	"description": "",
 	"scripts": {
 		"build": "tsc -p tsconfig.json",
@@ -34,6 +34,7 @@
 		"express-handlebars": "^6.0.2",
 		"glob": "^7.2.0",
 		"glob-promise": "^4.2.2",
+		"handlebars-helpers": "^0.9.8",
 		"mkdirp": "^1.0.4",
 		"mysql2": "^2.3.3",
 		"node-fetch": "^2.6.7",
