@@ -14,11 +14,11 @@
 	<a target="_blank"></a>
 </div>
 
-<div id="talent-tree-template" class="talent-tree">
+<div id="talent-tree-template" class="talent-tree column is-full-touch is-one-quarter-desktop">
 	<div class="header">
-		<img class="icon">
-		<span class="name"></span>
-		<span class="points"></span>
+		<img class="image">
+		<span class="name is-size-4"></span>
+		<span class="points is-size-5"></span>
 	</div>
 	<div class="cols">
 		<div class="col"></div>
@@ -28,21 +28,21 @@
 	</div>
 </div>
 
-<div id="spec-links">
-	<a href="#0" id="link-spec-0">Primary specialization</a>
-	&ensp;|&ensp;
-	<a href="#1" id="link-spec-1">Secondary specialization</a>
+<div id="spec-links" class="is-size-4">
+	<a href="#0" id="link-spec-0" class="is-block-touch">Primary specialization</a>
+	<span class="is-hidden-touch">&ensp;|&ensp;</span>
+	<a href="#1" id="link-spec-1" class="is-block-touch">Secondary specialization</a>
 </div>
 
-<div id="talents-spec-0">
-	<div>
-		<h3>Glyphs</h3>
+<div id="talents-spec-0" class="columns is-multiline has-text-centered">
+	<div class="column is-one-quarter-desktop">
+		<span class="is-size-4">Glyphs</span>
 		<div class="glyphs"></div>
 	</div>
 </div>
-<div id="talents-spec-1" style="display: none;">
-	<div>
-		<h3>Glyphs</h3>
+<div id="talents-spec-1" class="columns is-multiline has-text-centered hidden">
+	<div class="column is-one-quarter-desktop">
+		<span class="is-size-4">Glyphs</span>
 		<div class="glyphs"></div>
 	</div>
 </div>
@@ -81,14 +81,14 @@
 				.clone(false)
 				.removeAttr("id")
 				.appendTo($spec);
-			$tree.find(".header .icon").attr("src", `{{aowow}}/static/images/wow/icons/medium/${tree.icon}.jpg`);
+			$tree.find(".header .image").attr("src", `{{aowow}}/static/images/wow/icons/medium/${tree.icon}.jpg`);
 			$tree.find(".header .name").text(tree.name);
 
 			createTree(tree, learned, $tree[0]);
 		}
 
 		if (nbLearned === 0 && spec !== 0) {
-			$spec.hide();
+			$spec.addClass("hidden");
 			$("#spec-links").hide();
 			continue;
 		}
@@ -220,13 +220,13 @@
 	}
 
 	$("#link-spec-0").on("click", () => {
-		$("#talents-spec-0").show();
-		$("#talents-spec-1").hide();
+		$("#talents-spec-0").removeClass("hidden");
+		$("#talents-spec-1").addClass("hidden");
 	});
 
 	$("#link-spec-1").on("click", () => {
-		$("#talents-spec-1").show();
-		$("#talents-spec-0").hide();
+		$("#talents-spec-1").removeClass("hidden");
+		$("#talents-spec-0").addClass("hidden");
 	});
 
 	if (location.hash === "#1") {

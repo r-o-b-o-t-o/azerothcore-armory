@@ -65,10 +65,9 @@
 	border: 1px solid #ffcf00;
 }
 
-#talents-spec-0,
-#talents-spec-1 {
-	display: flex;
-	column-gap: 50px;
+#talents-spec-0.hidden,
+#talents-spec-1.hidden {
+	display: none;
 }
 
 .talent-tree .header {
@@ -77,10 +76,13 @@
 	align-items: center;
 	column-gap: 10px;
 	margin-bottom: 16px;
+	display: flex;
+	align-items: center;
 }
 
 .talent-tree .cols {
 	display: flex;
+	justify-content: center;
 	gap: 14px;
 }
 
