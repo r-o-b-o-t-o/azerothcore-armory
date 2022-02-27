@@ -75,6 +75,8 @@ export class Armory {
 
 		this.logger.info("Starting server...");
 		app.locals.aowow = this.config.aowowUrl;
+		app.locals.websiteUrl = this.config.websiteUrl;
+		app.locals.websiteName = this.config.websiteName;
 		app.engine(".html", handlebarsEngine({
 			extname: "html",
 			partialsDir: path.join(process.cwd(), "static", "partials"),

@@ -20,6 +20,8 @@ export interface IRealmConfig {
 
 export class Config {
 	public aowowUrl: string;
+	public websiteUrl: string;
+	public websiteName: string;
 	public loadDbcs: boolean;
 	public hideGameMasters: boolean;
 	public realms: IRealmConfig[];

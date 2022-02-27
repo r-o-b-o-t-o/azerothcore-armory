@@ -1,5 +1,7 @@
 {
 	"aowowUrl": "https://wotlkdb.com",
+	"websiteUrl": "https://mywebsite.com",
+	"websiteName": "My Website",
 	"loadDbcs": true,
 	"hideGameMasters": true,
 	"realms": [
