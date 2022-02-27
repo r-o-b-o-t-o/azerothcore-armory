@@ -18,10 +18,16 @@ export interface IRealmConfig {
 	charactersDatabase: IDatabaseConfig;
 }
 
+export interface IIframeModeConfig {
+	enabled: boolean;
+	url: string;
+}
+
 export class Config {
 	public aowowUrl: string;
 	public websiteUrl: string;
 	public websiteName: string;
+	public iframeMode: IIframeModeConfig;
 	public loadDbcs: boolean;
 	public hideGameMasters: boolean;
 	public realms: IRealmConfig[];

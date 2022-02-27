@@ -2,6 +2,10 @@
 	"aowowUrl": "https://wotlkdb.com",
 	"websiteUrl": "https://mywebsite.com",
 	"websiteName": "My Website",
+	"iframeMode": {
+		"enabled": false,
+		"url": "https://mywebsite.com/armory"
+	},
 	"loadDbcs": true,
 	"hideGameMasters": true,
 	"realms": [

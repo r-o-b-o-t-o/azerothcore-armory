@@ -11,8 +11,16 @@
 </head>
 
 <body>
+	{{#if iframeMode.enabled}}
+	<script type="application/javascript">
+		if (window === window.parent) {
+			// If not embedded, redirect to the main website with the iframe in it
+			window.location.href = `{{iframeMode.url}}/?${window.location.pathname.trim().replace(/^\//, "")}`;
+		}
+	</script>
 	<script type="application/javascript" src="/js/sync-url.js"></script>
 	<script type="application/javascript" src="https://cdn.jsdelivr.net/npm/iframe-resizer@4.3.2/js/iframeResizer.contentWindow.min.js"></script>
+	{{/if}}
 	<script type="application/javascript" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 	<section class="section">

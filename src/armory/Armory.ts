@@ -74,15 +74,20 @@ export class Armory {
 		}
 
 		this.logger.info("Starting server...");
+
 		app.locals.aowow = this.config.aowowUrl;
 		app.locals.websiteUrl = this.config.websiteUrl;
 		app.locals.websiteName = this.config.websiteName;
+		app.locals.iframeMode = this.config.iframeMode;
+
 		app.engine(".html", handlebarsEngine({
 			extname: "html",
 			partialsDir: path.join(process.cwd(), "static", "partials"),
 			layoutsDir: path.join(process.cwd(), "static"),
 			defaultLayout: "layout.html",
-			helpers: require("handlebars-helpers")(),
+			helpers: {
+				...require("handlebars-helpers")(),
+			},
 		}));
 		app.set("view engine", "handlebars");
 		app.set("views", path.join(process.cwd(), "static"));
