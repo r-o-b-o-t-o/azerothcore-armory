@@ -8,6 +8,7 @@
 
 #results td {
 	text-align: center;
+	vertical-align: middle;
 }
 
 #results_processing {

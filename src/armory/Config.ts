@@ -1,6 +1,8 @@
 import * as fs from "fs";
 const fsp = fs.promises;
 
+import * as winston from "winston";
+
 export interface IDatabaseConfig {
 	host: string;
 	port: number;
@@ -25,31 +27,31 @@ export class Config {
 
 	private static checkedMissingField: boolean = false;
 
-	public static async load(): Promise<Config> {
+	public static async load(logger: winston.Logger): Promise<Config> {
 		const json: Buffer = await fsp.readFile("config.json");
 		const config = JSON.parse(json.toString()) as Config;
 
 		if (!Config.checkedMissingField) {
 			const defaultConfigJson = await fsp.readFile("config.default.json");
 			const defaultConfig = JSON.parse(defaultConfigJson.toString());
-			Config.checkAllMissingFields(config, defaultConfig);
+			Config.checkAllMissingFields(logger, config, defaultConfig);
 			Config.checkedMissingField = true;
 		}
 
 		return config;
 	}
 
-	private static checkAllMissingFields(obj: object, model: object, parentName: string = "") {
+	private static checkAllMissingFields(logger: winston.Logger, obj: object, model: object, parentName: string = "") {
 		const missing = Config.hasMissingFields(obj, model);
 		if (parentName !== "") {
 			parentName += ".";
 		}
 		for (const field of missing) {
-			console.warn(`Field ${parentName}${field} is missing in config.json!`);
+			logger.warn(`Field ${parentName}${field} is missing in config.json!`);
 		}
 		for (const key in model) {
 			if (typeof model[key] === "object" && obj.hasOwnProperty(key)) {
-				Config.checkAllMissingFields(obj[key], model[key], parentName + key);
+				Config.checkAllMissingFields(logger, obj[key], model[key], parentName + key);
 			}
 		}
 	}

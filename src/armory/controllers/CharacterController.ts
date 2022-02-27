@@ -147,22 +147,20 @@ export class CharacterController {
 		}
 	}
 
-	public async character(req: express.Request, res: express.Response): Promise<void> {
+	public async character(req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> {
 		const realmName = req.params.realm;
 		const charName = req.params.name;
 
 		const realm = this.getRealm(realmName);
 		if (realm === undefined) {
 			// Could not find realm
-			res.sendStatus(404);
-			return;
+			return next(404);
 		}
 
 		const charData = await this.getCharacterData(realm, charName);
 		if (charData === null) {
 			// Could not find character
-			res.sendStatus(404);
-			return;
+			return next(404);
 		}
 
 		const equipmentData = await this.getEquipmentData(realmName, charData.guid);
@@ -193,22 +191,20 @@ export class CharacterController {
 		this.armory.gc();
 	}
 
-	public async talents(req: express.Request, res: express.Response): Promise<void> {
+	public async talents(req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> {
 		const realmName = req.params.realm;
 		const charName = req.params.name;
 
 		const realm = this.getRealm(realmName);
 		if (realm === undefined) {
 			// Could not find realm
-			res.sendStatus(404);
-			return;
+			return next(404);
 		}
 
 		const charData = await this.getCharacterData(realm, charName);
 		if (charData === null) {
 			// Could not find character
-			res.sendStatus(404);
-			return;
+			return next(404);
 		}
 
 		res.render("character-talents.html", {
@@ -222,22 +218,20 @@ export class CharacterController {
 		});
 	}
 
-	public async achievements(req: express.Request, res: express.Response): Promise<void> {
+	public async achievements(req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> {
 		const realmName = req.params.realm;
 		const charName = req.params.name;
 
 		const realm = this.getRealm(realmName);
 		if (realm === undefined) {
 			// Could not find realm
-			res.sendStatus(404);
-			return;
+			return next(404);
 		}
 
 		const charData = await this.getCharacterData(realm, charName);
 		if (charData === null) {
 			// Could not find character
-			res.sendStatus(404);
-			return;
+			return next(404);
 		}
 
 		res.render("character-achievements.html", {
@@ -246,22 +240,20 @@ export class CharacterController {
 		});
 	}
 
-	public async achievementsData(req: express.Request, res: express.Response): Promise<void> {
+	public async achievementsData(req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> {
 		const realmName = req.params.realm;
 		const character = parseInt(req.params.character) || -1;
 
 		const realm = this.getRealm(realmName);
 		if (realm === undefined) {
 			// Could not find realm
-			res.sendStatus(404);
-			return;
+			return next(404);
 		}
 
 		const charData = await this.getCharacterData(realm, character);
 		if (charData === null) {
 			// Could not find character
-			res.sendStatus(404);
-			return;
+			return next(404);
 		}
 
 		res.json({

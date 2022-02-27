@@ -44,14 +44,13 @@ export class IndexController {
 		});
 	}
 
-	public async search(req: express.Request, res: express.Response): Promise<void> {
+	public async search(req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> {
 		const realmName = req.query.realm as string;
 		const realm = realmName === undefined ?
 			this.armory.config.realms[0] :
 			this.armory.config.realms.find(r => r.name === realmName);
 		if (realm === undefined) {
-			res.status(400);
-			return;
+			return next(400);
 		}
 
 		const db = this.armory.getCharactersDb(realm.name);

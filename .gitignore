@@ -11,3 +11,6 @@ data/*
 
 # Configuration
 config.json
+
+# Log files
+*.log
