@@ -54,20 +54,21 @@ export class IndexController {
 		}
 
 		const db = this.armory.getCharactersDb(realm.name);
+		const conn = await db.getConnection();
 
 		if (!(realm.name in this.charsetCache)) {
 			let [rows, fields] = await db.query(`
 				SELECT CCSA.character_set_name FROM information_schema.\`TABLES\` T,
 				information_schema.\`COLLATION_CHARACTER_SET_APPLICABILITY\` CCSA
 				WHERE CCSA.collation_name = T.table_collation
-				AND T.table_schema = "${db.config.database}"
+				AND T.table_schema = "${conn.config.database}"
 				AND T.table_name = "characters"
 			`);
 			this.charsetCache[realm.name] = rows[0].character_set_name;
 		}
 		const charSet = this.charsetCache[realm.name];
 
-		let ssp = new DataTablesSsp(req.query, db, "characters", "guid", [
+		let ssp = new DataTablesSsp(req.query, conn, "characters", "guid", [
 			{ name: "name", collation: `${charSet}_general_ci` },
 			{ table: "guild", name: "name" },
 			{ name: "level" },

@@ -4,7 +4,7 @@ import { Express } from "express";
 import * as express from "express";
 import * as winston from "winston";
 import * as morgan from "morgan";
-import { Connection, createConnection } from "mysql2/promise";
+import { Pool, createPool } from "mysql2/promise";
 import { engine as handlebarsEngine } from "express-handlebars";
 
 import { Config } from "./Config";
@@ -17,10 +17,10 @@ export class Armory {
 	public characterCustomization: CharacterCustomization;
 	public dbc: DbcManager;
 	public config: Config;
-	public worldDb: Connection;
+	public worldDb: Pool;
 	public logger: winston.Logger;
 
-	private charsDbs: { [key: string]: Connection };
+	private charsDbs: { [key: string]: Pool };
 	private errorNames: { [key: number]: string };
 	private errorDescriptions: { [key: number]: string };
 
@@ -68,9 +68,9 @@ export class Armory {
 		await this.characterCustomization.loadData();
 
 		this.logger.info("Connecting to databases...");
-		this.worldDb = await createConnection(this.config.worldDatabase);
+		this.worldDb = createPool(this.config.worldDatabase);
 		for (const realm of this.config.realms) {
-			this.charsDbs[realm.name.toLowerCase()] = await createConnection(realm.charactersDatabase);
+			this.charsDbs[realm.name.toLowerCase()] = createPool(realm.charactersDatabase);
 		}
 
 		this.logger.info("Starting server...");
@@ -168,7 +168,7 @@ export class Armory {
 		});
 	}
 
-	public getCharactersDb(realm: string): Connection {
+	public getCharactersDb(realm: string): Pool {
 		return this.charsDbs[realm.toLowerCase()];
 	}
 
