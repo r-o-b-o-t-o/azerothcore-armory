@@ -17,6 +17,7 @@
 .dataTables_wrapper .dataTables_length select {
 	color: #ffffff;
 }
+
 .dataTables_wrapper .dataTables_length select option {
 	color: #000000;
 }
@@ -35,15 +36,17 @@ table.dataTable.display tbody tr:hover {
 	background-color: #3f3f3f;
 }
 
-.dataTables_wrapper .dataTables_paginate .paginate_button.disabled,
-.dataTables_wrapper .dataTables_paginate .paginate_button.disabled:hover,
-.dataTables_wrapper .dataTables_paginate .paginate_button.disabled:active {
-	color: #a3a3a3 !important;
+.dataTables_wrapper .dataTables_paginate .ellipsis {
+	color: #e6e6e6;
+	line-height: 32px;
 }
 
-.dataTables_wrapper .dataTables_paginate .paginate_button,
-.dataTables_wrapper .dataTables_paginate {
-	color: #e6e6e6 !important;
+.dataTables_wrapper .dataTables_paginate .button.is-dark.disabled {
+	background-color: #282f2f;
+	border-color: transparent;
+	box-shadow: none;
+	opacity: 0.5;
+	cursor: not-allowed;
 }
 
 table.dataTable.row-border tbody th,
@@ -51,4 +54,8 @@ table.dataTable.row-border tbody td,
 table.dataTable.display tbody th,
 table.dataTable.display tbody td {
 	border-top: 1px solid #222222;
+}
+
+.dataTables_paginate .button {
+	margin-right: 2px;
 }
