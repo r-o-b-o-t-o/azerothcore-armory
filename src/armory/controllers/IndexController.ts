@@ -1,40 +1,14 @@
 import * as express from "express";
 
+import { Utils } from "../Utils";
 import { Armory } from "../Armory";
 import { DataTablesSsp } from "../DataTablesSsp";
 
-const raceFiles = {
-	1: "human",
-	2: "orc",
-	3: "dwarf",
-	4: "nightelf",
-	5: "scourge",
-	6: "tauren",
-	7: "gnome",
-	8: "troll",
-	10: "bloodelf",
-	11: "draenei",
-};
-const classFiles = {
-	1: "warrior",
-	2: "paladin",
-	3: "hunter",
-	4: "rogue",
-	5: "priest",
-	6: "deathknight",
-	7: "shaman",
-	8: "mage",
-	9: "warlock",
-	11: "druid",
-};
-
 export class IndexController {
 	private armory: Armory;
-	private charsetCache: { [key: string]: string };
 
 	public constructor(armory: Armory) {
 		this.armory = armory;
-		this.charsetCache = {};
 	}
 
 	public async index(req: express.Request, res: express.Response): Promise<void> {
@@ -54,28 +28,14 @@ export class IndexController {
 		}
 
 		const db = this.armory.getCharactersDb(realm.name);
-
-		if (!(realm.name in this.charsetCache)) {
-			let [rows, fields] = await db.query({
-				sql: `
-					SELECT CCSA.character_set_name FROM information_schema.\`TABLES\` T,
-					information_schema.\`COLLATION_CHARACTER_SET_APPLICABILITY\` CCSA
-					WHERE CCSA.collation_name = T.table_collation
-					AND T.table_schema = "${(await db.getConnection()).config.database}"
-					AND T.table_name = "characters"
-				`,
-				timeout: this.armory.config.dbQueryTimeout,
-			});
-			this.charsetCache[realm.name] = rows[0].character_set_name;
-		}
-		const charSet = this.charsetCache[realm.name];
+		const charSet = await this.armory.getDatabaseCharset(realm.name);
 
 		let ssp = new DataTablesSsp(req.query, db, "characters", "guid", [
 			{ name: "name", collation: `${charSet}_general_ci` },
 			{ table: "guild", name: "name" },
 			{ name: "level" },
-			{ name: "class", formatter: cls => classFiles[cls] },
-			{ name: "race", formatter: (race, row) => `${raceFiles[race]}_${row[6] === 0 ? "male" : "female"}` },
+			{ name: "class", formatter: cls => Utils.classNames[cls] },
+			{ name: "race", formatter: (race, row) => `${Utils.raceNames[race]}_${row[6] === 0 ? "male" : "female"}` },
 			{ name: "online", formatter: online => online === 1 },
 		]);
 		ssp.joins = [

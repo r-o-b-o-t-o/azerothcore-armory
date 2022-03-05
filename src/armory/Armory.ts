@@ -12,6 +12,7 @@ import { DbcManager } from "./data/DbcReader";
 import { CharacterCustomization } from "./data/CharacterCustomization";
 import { IndexController } from "./controllers/IndexController";
 import { CharacterController } from "./controllers/CharacterController";
+import { GuildController } from "./controllers/GuildController";
 
 export class Armory {
 	public characterCustomization: CharacterCustomization;
@@ -19,6 +20,7 @@ export class Armory {
 	public config: Config;
 	public worldDb: Pool;
 	public logger: winston.Logger;
+	public charsetCache: { [key: string]: string };
 
 	private charsDbs: { [key: string]: Pool };
 	private errorNames: { [key: number]: string };
@@ -40,6 +42,7 @@ export class Armory {
 				new winston.transports.File({ filename: "armory.combined.log", level: "http" }),
 			],
 		});
+		this.charsetCache = {};
 
 		this.errorNames = {
 			400: "Bad Request",
@@ -100,7 +103,17 @@ export class Armory {
 		morgan.token("id", (req: express.Request) => {
 			return req.id;
 		});
-		app.use(morgan(":method :url :status - ID :id - :remote-addr - :response-time ms", {
+		morgan.token("ip", (req: express.Request) => {
+			const forwardedFor = req.headers["x-forwarded-for"];
+			if (forwardedFor) {
+				if (typeof forwardedFor === "string") {
+					return forwardedFor;
+				}
+				return forwardedFor.join(", ");
+			}
+			return req.socket.remoteAddress;
+		});
+		app.use(morgan(":method :url :status - ID :id - IP :ip - :response-time ms", {
 			stream: {
 				write: (msg) => this.logger.http(msg.trim()),
 			},
@@ -125,6 +138,10 @@ export class Armory {
 		app.get("/character/:realm/:name/talents", this.wrapRoute(charsController.talents.bind(charsController)));
 		app.get("/character/:realm/:name/achievements", this.wrapRoute(charsController.achievements.bind(charsController)));
 		app.get("/character/:realm/:character/achievements/data", this.wrapRoute(charsController.achievementsData.bind(charsController)));
+
+		const guildsController = new GuildController(this);
+		app.get("/guild/:realm/:name", this.wrapRoute(guildsController.guild.bind(guildsController)));
+		app.get("/guild/:realm/:name/members", this.wrapRoute(guildsController.members.bind(guildsController)));
 
 		app.use((err, req: express.Request, res: express.Response, next: express.NextFunction) => {
 			// Error handler
@@ -172,6 +189,25 @@ export class Armory {
 
 	public getRealm(realm: string): IRealmConfig {
 		return this.config.realms.find(r => r.name.toLowerCase() === realm.toLowerCase());
+	}
+
+	public async getDatabaseCharset(realm: string): Promise<string> {
+		const db = this.getCharactersDb(realm);
+
+		if (!(realm in this.charsetCache)) {
+			const [rows, fields] = await db.query({
+				sql: `
+					SELECT CCSA.character_set_name FROM information_schema.\`TABLES\` T,
+					information_schema.\`COLLATION_CHARACTER_SET_APPLICABILITY\` CCSA
+					WHERE CCSA.collation_name = T.table_collation
+					AND T.table_schema = "${(await db.getConnection()).config.database}"
+					AND T.table_name = "characters"
+				`,
+				timeout: this.config.dbQueryTimeout,
+			});
+			this.charsetCache[realm] = rows[0].character_set_name;
+		}
+		return this.charsetCache[realm];
 	}
 
 	public gc(): void {

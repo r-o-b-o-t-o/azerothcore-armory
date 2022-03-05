@@ -1,0 +1,48 @@
+#guild-header {
+	display: flex;
+}
+
+#guild-header .emblem {
+	margin-right: 1em;
+}
+
+#guild-header .info {
+	text-align: center;
+}
+
+.faction {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.faction .logo {
+	height: 32px;
+	margin-right: 4px;
+}
+
+#emblem-images {
+	display: none;
+}
+
+#emblem {
+	background: url("/img/guild-emblems/circle.png") no-repeat center;
+	display: flex;
+	flex-shrink: 0;
+	height: 128px;
+	width: 128px;
+}
+
+#emblem canvas {
+	height: 96px;
+	width: 96px;
+	margin: auto;
+}
+
+.circle {
+	clip-path: circle(50% at 50% 50%);
+}
+
+#members_processing {
+	height: 70px;
+}

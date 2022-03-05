@@ -1,6 +1,7 @@
 import * as express from "express";
 import { RowDataPacket } from "mysql2/promise";
 
+import { Utils } from "../Utils";
 import { Armory } from "../Armory";
 import { IRealmConfig } from "../Config";
 import { IAchievement } from "../data/DbcReader";
@@ -732,10 +733,8 @@ export class CharacterController {
 	}
 
 	private async getAchievements(realm: string, charData: ICharacterData): Promise<{ achievements: any[]; earned: { [key: number]: any }; }> {
-		const faction = [1, 3, 4, 7, 11].includes(charData.race) ? 1 : 0;
-
 		const promises = await this.armory.dbc.achievement()
-			.filter(ach => ach.faction === -1 || ach.faction === faction)
+			.filter(ach => ach.faction === -1 || ach.faction === Utils.getFactionFromRaceId(charData.race))
 			.map(async (ach) => {
 				const icon = await this.armory.dbc.spellIcon().find(icon => icon.id === ach.iconId);
 				return {

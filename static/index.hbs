@@ -1,10 +1,5 @@
 <link rel="stylesheet" type="text/css" href="/css/index.css">
-<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.3/css/jquery.dataTables.min.css">
-<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.2.9/css/responsive.dataTables.min.css">
-<link rel="stylesheet" type="text/css" href="/css/datatables.css">
-<script type="application/javascript" src="https://cdn.datatables.net/1.11.3/js/jquery.dataTables.min.js"></script>
-<script type="application/javascript"
-	src="https://cdn.datatables.net/responsive/2.2.9/js/dataTables.responsive.min.js"></script>
+{{> datatables}}
 
 <h1 class="title is-size-1">Armory</h1>
 
@@ -27,7 +22,7 @@
 <table id="results" class="stripe hover row-border">
 	<thead>
 		<tr>
-			<th>Character name</th>
+			<th>Name</th>
 			<th>Guild</th>
 			<th>Level</th>
 			<th>Class</th>
@@ -41,47 +36,47 @@
 <script type="application/javascript">
 	let dt;
 
-	function initDataTables() {
-		dt = $("#results").DataTable({
-			processing: true,
-			serverSide: true,
-			searchDelay: 800,
-			ajax: {
-				url: `/search`,
-				data: d => {
-					d.realm = $("#select-realm").val();
-				},
-			},
-			columnDefs: [
-				{
-					targets: 0,
-					render: (name, type, row, meta) => `<a href="/character/${meta.settings.json.realm}/${name}">${name}</a>`,
-				},
-				{
-					searchable: false,
-					targets: 3,
-					render: data => `<img src="{{aowow}}/static/images/wow/icons/medium/class_${data}.jpg">`,
-				},
-				{
-					searchable: false,
-					targets: 4,
-					render: data => `<img src="{{aowow}}/static/images/wow/icons/medium/race_${data}.jpg">`,
-				},
-				{
-					searchable: false,
-					targets: 5,
-					render: online => online ? "🟢" : "🔴",
-				},
-			],
-			responsive: {
-				details: true,
-			},
-		});
-	}
-
 	$("#select-realm").on("change", () => {
 		dt.draw();
 	});
 
-	initDataTables();
+	dt = $("#results").DataTable({
+		processing: true,
+		serverSide: true,
+		searchDelay: 800,
+		ajax: {
+			url: `/search`,
+			data: d => {
+				d.realm = $("#select-realm").val();
+			},
+		},
+		columnDefs: [
+			{
+				targets: 0,
+				render: (name, type, row, meta) => `<a href="/character/${meta.settings.json.realm}/${name}">${name}</a>`,
+			},
+			{
+				targets: 1,
+				render: (guild, type, row, meta) => guild === null ? "" : `<a href="/guild/${meta.settings.json.realm}/${guild}">${guild}</a>`,
+			},
+			{
+				searchable: false,
+				targets: 3,
+				render: data => `<img src="{{aowow}}/static/images/wow/icons/medium/class_${data}.jpg">`,
+			},
+			{
+				searchable: false,
+				targets: 4,
+				render: data => `<img src="{{aowow}}/static/images/wow/icons/medium/race_${data}.jpg">`,
+			},
+			{
+				searchable: false,
+				targets: 5,
+				render: online => online ? "🟢" : "🔴",
+			},
+		],
+		responsive: {
+			details: true,
+		},
+	});
 </script>

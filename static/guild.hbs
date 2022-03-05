@@ -1,0 +1,154 @@
+<link rel="stylesheet" type="text/css" href="/css/guild.css">
+{{> datatables}}
+
+<a href="/">Back to Armory</a>
+<br><br>
+
+<div id="guild-header">
+	<div class="emblem">
+		<div id="emblem" class="shape-outer circle">
+			<canvas class="shape-inner circle" width="128" height="96"></canvas>
+		</div>
+	</div>
+
+	<div class="info">
+		<div class="char-name title is-size-3">&lt;{{name}}&gt;</div>
+		<div class="is-size-5">
+			<div>
+				Guild Master: <a href="/character/{{realm}}/{{leader}}">{{leader}}</a>
+			</div>
+			<div>
+				{{membersCount}} members
+			</div>
+			{{#eq faction 1}}
+			<div class="faction">
+				<img class="logo" src="/img/PlusManz-Alliance.png">
+				<span>Alliance</span>
+			</div>
+			{{else}}
+			<div class="faction">
+				<img class="logo" src="/img/PlusManz-Horde.png">
+				<span>Horde</span>
+			</div>
+			{{/eq}}
+		</div>
+	</div>
+</div>
+
+<br>
+<div id="emblem-images">
+	<img id="emblem-bg-upper" src="/img/guild-emblems/Background_{{emblem.background}}_TU_U.PNG">
+	<img id="emblem-bg-lower" src="/img/guild-emblems/Background_{{emblem.background}}_TL_U.PNG">
+	<img id="emblem-icon-upper" src="/img/guild-emblems/Emblem_{{emblem.icon}}_{{emblem.iconColor}}_TU_U.PNG">
+	<img id="emblem-icon-lower" src="/img/guild-emblems/Emblem_{{emblem.icon}}_{{emblem.iconColor}}_TL_U.PNG">
+	<img id="emblem-border-upper" src="/img/guild-emblems/Border_{{emblem.border}}_{{emblem.borderColor}}_TU_U.PNG">
+	<img id="emblem-border-lower" src="/img/guild-emblems/Border_{{emblem.border}}_{{emblem.borderColor}}_TL_U.PNG">
+</div>
+
+<table id="members" class="stripe hover row-border">
+	<thead>
+		<tr>
+			<th>Name</th>
+			<th>Rank</th>
+			<th>Level</th>
+			<th>Class</th>
+			<th>Race</th>
+			<th>Online</th>
+		</tr>
+	</thead>
+	<tbody></tbody>
+</table>
+
+<script type="application/javascript">
+	function createEmblem() {
+		const canvas = $("#emblem canvas")[0];
+		const ctx = canvas.getContext("2d");
+
+		const mask = $("#emblem-mask")[0];
+		const bgUpper = $("#emblem-bg-upper")[0];
+		const bgLower = $("#emblem-bg-lower")[0];
+		const iconUpper = $("#emblem-icon-upper")[0];
+		const iconLower = $("#emblem-icon-lower")[0];
+
+		ctx.beginPath();
+		ctx.moveTo(0, 0);
+		ctx.lineTo(26, 0);
+		ctx.lineTo(64, 28);
+		ctx.lineTo(102, 0);
+		ctx.lineTo(128, 0);
+		ctx.lineTo(128, 96);
+		ctx.lineTo(0, 96);
+		ctx.closePath();
+		ctx.clip();
+		drawEmblemLayer(canvas, ctx, "bg");
+		drawEmblemLayer(canvas, ctx, "icon");
+		drawEmblemLayer(canvas, ctx, "border");
+	}
+
+	function drawEmblemLayer(canvas, ctx, layer) {
+		const upper = $(`#emblem-${layer}-upper`)[0];
+		const lower = $(`#emblem-${layer}-lower`)[0];
+
+		const w = upper.width / 2;
+		const uh = upper.height;
+		const lh = lower.height;
+
+		ctx.drawImage(upper, 0, 0, w, uh, w, 0, w, uh);
+		ctx.drawImage(lower, 0, 0, w, lh, w, upper.height, w, lh);
+		ctx.save();
+		ctx.scale(-1, 1);
+		ctx.drawImage(upper, 0, 0, w, uh, 0, 0, -w, uh);
+		ctx.drawImage(lower, 0, 0, w, lh, 0, upper.height, -w, lh);
+		ctx.restore();
+	}
+
+	const emblemLoadPromises = $("#emblem-images img").map((idx, img) => {
+		return new Promise((res, rej) => {
+			if (img.complete) {
+				res();
+			} else {
+				img.addEventListener("load", res);
+				img.addEventListener("error", rej);
+			}
+		});
+	});
+	Promise.all(emblemLoadPromises).then(createEmblem);
+
+	dt = $("#members").DataTable({
+		processing: true,
+		serverSide: true,
+		searchDelay: 800,
+		ajax: {
+			url: `/guild/{{realm}}/{{name}}/members`,
+		},
+		columnDefs: [
+			{
+				targets: 0,
+				render: (name) => `<a href="/character/{{realm}}/${name}">${name}</a>`,
+			},
+			{
+				targets: 1,
+				render: (rank, type, row, meta) => meta.settings.json.ranks[rank],
+			},
+			{
+				searchable: false,
+				targets: 3,
+				render: data => `<img src="{{aowow}}/static/images/wow/icons/medium/class_${data}.jpg">`,
+			},
+			{
+				searchable: false,
+				targets: 4,
+				render: data => `<img src="{{aowow}}/static/images/wow/icons/medium/race_${data}.jpg">`,
+			},
+			{
+				searchable: false,
+				targets: 5,
+				render: online => online ? "🟢" : "🔴",
+			},
+		],
+		responsive: {
+			details: true,
+		},
+		order: [[1, "asc"]],
+	});
+</script>
