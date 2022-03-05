@@ -116,7 +116,10 @@ export class CharacterController {
 		}
 
 		this.itemSocketBonuses = {};
-		let [rows, fields] = await this.armory.worldDb.query("SELECT entry, socketBonus FROM item_template WHERE socketBonus <> 0");
+		let [rows, fields] = await this.armory.worldDb.query({
+			sql: "SELECT entry, socketBonus FROM item_template WHERE socketBonus <> 0",
+			timeout: this.armory.config.dbQueryTimeout,
+		});
 		for (const row of rows as RowDataPacket[]) {
 			this.itemSocketBonuses[row.entry] = row.socketBonus;
 		}
@@ -151,7 +154,7 @@ export class CharacterController {
 		const realmName = req.params.realm;
 		const charName = req.params.name;
 
-		const realm = this.getRealm(realmName);
+		const realm = this.armory.getRealm(realmName);
 		if (realm === undefined) {
 			// Could not find realm
 			return next(404);
@@ -195,7 +198,7 @@ export class CharacterController {
 		const realmName = req.params.realm;
 		const charName = req.params.name;
 
-		const realm = this.getRealm(realmName);
+		const realm = this.armory.getRealm(realmName);
 		if (realm === undefined) {
 			// Could not find realm
 			return next(404);
@@ -222,7 +225,7 @@ export class CharacterController {
 		const realmName = req.params.realm;
 		const charName = req.params.name;
 
-		const realm = this.getRealm(realmName);
+		const realm = this.armory.getRealm(realmName);
 		if (realm === undefined) {
 			// Could not find realm
 			return next(404);
@@ -244,7 +247,7 @@ export class CharacterController {
 		const realmName = req.params.realm;
 		const character = parseInt(req.params.character) || -1;
 
-		const realm = this.getRealm(realmName);
+		const realm = this.armory.getRealm(realmName);
 		if (realm === undefined) {
 			// Could not find realm
 			return next(404);
@@ -275,22 +278,22 @@ export class CharacterController {
 		};
 	}
 
-	private getRealm(realm: string): IRealmConfig {
-		return this.armory.config.realms.find(r => r.name.toLowerCase() === realm.toLowerCase());
-	}
-
 	private async getCharacterData(realm: IRealmConfig, character: string | number): Promise<ICharacterData> {
 		const where = typeof character === "string" ? "LOWER(`characters`.`name`) = LOWER(?)" : "`characters`.`guid` = ?";
-		const [rows, fields] = await this.armory.getCharactersDb(realm.name).query(`
-			SELECT \`characters\`.\`guid\`, \`characters\`.\`name\`, \`race\`, \`class\`, \`gender\`, \`level\`, \`skin\`, \`face\`, \`hairStyle\`, \`hairColor\`, \`facialStyle\`, \`playerFlags\`, \`online\`, \`guild\`.\`name\` AS \`guild\`
-			FROM \`characters\`
-			LEFT JOIN \`guild_member\` ON \`guild_member\`.\`guid\` = \`characters\`.\`guid\`
-			LEFT JOIN \`guild\` ON \`guild\`.\`guildid\` = \`guild_member\`.\`guildid\`
-			LEFT JOIN \`${realm.authDatabase}\`.\`account_access\` ON \`account_access\`.\`id\` = \`characters\`.\`account\`
-			WHERE
-				${where}
-				AND (\`account_access\`.\`id\` IS NULL OR \`account_access\`.\`RealmID\` NOT IN (-1, ${realm.realmId}) OR \`account_access\`.\`gmlevel\` = 0 OR ? = 0)
-		`, [character, this.armory.config.hideGameMasters ? 1 : 0]);
+		const [rows, fields] = await this.armory.getCharactersDb(realm.name).query({
+			sql: `
+				SELECT \`characters\`.\`guid\`, \`characters\`.\`name\`, \`race\`, \`class\`, \`gender\`, \`level\`, \`skin\`, \`face\`, \`hairStyle\`, \`hairColor\`, \`facialStyle\`, \`playerFlags\`, \`online\`, \`guild\`.\`name\` AS \`guild\`
+				FROM \`characters\`
+				LEFT JOIN \`guild_member\` ON \`guild_member\`.\`guid\` = \`characters\`.\`guid\`
+				LEFT JOIN \`guild\` ON \`guild\`.\`guildid\` = \`guild_member\`.\`guildid\`
+				LEFT JOIN \`${realm.authDatabase}\`.\`account_access\` ON \`account_access\`.\`id\` = \`characters\`.\`account\`
+				WHERE
+					${where}
+					AND (\`account_access\`.\`id\` IS NULL OR \`account_access\`.\`RealmID\` NOT IN (-1, ${realm.realmId}) OR \`account_access\`.\`gmlevel\` = 0 OR ? = 0)
+			`,
+			values: [character, this.armory.config.hideGameMasters ? 1 : 0],
+			timeout: this.armory.config.dbQueryTimeout,
+		});
 
 		if ((rows as RowDataPacket[]).length === 0) {
 			return null;
@@ -299,21 +302,29 @@ export class CharacterController {
 	}
 
 	private async getEquipmentData(realm: string, charGuid: number): Promise<IEquipmentData[]> {
-		const [rows, fields] = await this.armory.getCharactersDb(realm).query(`
-			SELECT character_inventory.slot, item_instance.itemEntry, item_instance.flags, item_instance.enchantments, item_instance.randomPropertyId
-			FROM character_inventory
-			JOIN item_instance ON item_instance.guid = character_inventory.item
-			WHERE character_inventory.guid = ? AND character_inventory.bag = 0 AND character_inventory.slot IN (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18)
-		`, [charGuid]);
+		const [rows, fields] = await this.armory.getCharactersDb(realm).query({
+			sql: `
+				SELECT character_inventory.slot, item_instance.itemEntry, item_instance.flags, item_instance.enchantments, item_instance.randomPropertyId
+				FROM character_inventory
+				JOIN item_instance ON item_instance.guid = character_inventory.item
+				WHERE character_inventory.guid = ? AND character_inventory.bag = 0 AND character_inventory.slot IN (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18)
+			`,
+			values: [charGuid],
+			timeout: this.armory.config.dbQueryTimeout,
+		});
 		return rows as RowDataPacket[] as IEquipmentData[];
 	}
 
 	private async getMounts(realm: string, charGuid: number): Promise<IMount[]> {
-		const [rows, fields] = await this.armory.getCharactersDb(realm).query(`
-			SELECT spell
-			FROM character_spell
-			WHERE guid = ? AND spell IN (?)
-		`, [charGuid, this.mountSpells]);
+		const [rows, fields] = await this.armory.getCharactersDb(realm).query({
+			sql: `
+				SELECT spell
+				FROM character_spell
+				WHERE guid = ? AND spell IN (?)
+			`,
+			values:[charGuid, this.mountSpells],
+			timeout: this.armory.config.dbQueryTimeout,
+		});
 
 		return (rows as RowDataPacket[])
 			.map(row => this.mountBySpellId[row.spell])
@@ -640,11 +651,15 @@ export class CharacterController {
 	}
 
 	private async getTalents(realm: string, character: number): Promise<number[][]> {
-		const [rows, fields] = await this.armory.getCharactersDb(realm).query(`
-			SELECT spell, specMask
-			FROM character_talent
-			WHERE guid = ?
-		`, [character]);
+		const [rows, fields] = await this.armory.getCharactersDb(realm).query({
+			sql: `
+				SELECT spell, specMask
+				FROM character_talent
+				WHERE guid = ?
+			`,
+			values: [character],
+			timeout: this.armory.config.dbQueryTimeout,
+		});
 
 		const talents: number[][] = [[], []];
 		for (const row of rows as RowDataPacket[]) {
@@ -691,11 +706,15 @@ export class CharacterController {
 	}
 
 	private async getGlyphs(realm: string, character: number): Promise<any[][]> {
-		const [rows, fields] = await this.armory.getCharactersDb(realm).query(`
-			SELECT guid, talentGroup, glyph1, glyph2, glyph3, glyph4, glyph5, glyph6
-			FROM character_glyphs
-			WHERE guid = ?
-		`, [character]);
+		const [rows, fields] = await this.armory.getCharactersDb(realm).query({
+			sql: `
+				SELECT guid, talentGroup, glyph1, glyph2, glyph3, glyph4, glyph5, glyph6
+				FROM character_glyphs
+				WHERE guid = ?
+			`,
+			values: [character],
+			timeout: this.armory.config.dbQueryTimeout,
+		});
 
 		const glyphs = [[], []];
 		for (const row of rows as RowDataPacket[]) {
@@ -731,11 +750,15 @@ export class CharacterController {
 			.toArray();
 		const achievements = await Promise.all(promises);
 
-		const [rows, fields] = await this.armory.getCharactersDb(realm).query(`
-			SELECT achievement, date
-			FROM character_achievement
-			WHERE guid = ?
-		`, [charData.guid]);
+		const [rows, fields] = await this.armory.getCharactersDb(realm).query({
+			sql: `
+				SELECT achievement, date
+				FROM character_achievement
+				WHERE guid = ?
+			`,
+			values: [charData.guid],
+			timeout: this.armory.config.dbQueryTimeout,
+		});
 		const earned = {};
 		for (const row of rows as RowDataPacket[]) {
 			earned[row.achievement] = {

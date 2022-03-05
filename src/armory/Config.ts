@@ -32,6 +32,7 @@ export class Config {
 	public hideGameMasters: boolean;
 	public realms: IRealmConfig[];
 	public worldDatabase: IDatabaseConfig;
+	public dbQueryTimeout: number;
 
 	private static checkedMissingField: boolean = false;
 

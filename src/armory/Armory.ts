@@ -7,7 +7,7 @@ import * as morgan from "morgan";
 import { Pool, createPool } from "mysql2/promise";
 import { engine as handlebarsEngine } from "express-handlebars";
 
-import { Config } from "./Config";
+import { Config, IRealmConfig } from "./Config";
 import { DbcManager } from "./data/DbcReader";
 import { CharacterCustomization } from "./data/CharacterCustomization";
 import { IndexController } from "./controllers/IndexController";
@@ -148,14 +148,12 @@ export class Armory {
 
 			// Respond with html page
 			if (req.accepts("html")) {
-				res.render("error.html", this.getErrorViewData(404, req));
-				return;
+				return res.render("error.html", this.getErrorViewData(404, req));
 			}
 
 			// Respond with json
 			if (req.accepts("json")) {
-				res.json({ error: this.errorNames[404] });
-				return;
+				return res.json({ error: this.errorNames[404] });
 			}
 
 			// Default to plain-text
@@ -170,6 +168,10 @@ export class Armory {
 
 	public getCharactersDb(realm: string): Pool {
 		return this.charsDbs[realm.toLowerCase()];
+	}
+
+	public getRealm(realm: string): IRealmConfig {
+		return this.config.realms.find(r => r.name.toLowerCase() === realm.toLowerCase());
 	}
 
 	public gc(): void {

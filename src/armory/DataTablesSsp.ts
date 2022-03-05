@@ -1,5 +1,5 @@
+import { Pool } from "mysql2/promise";
 import { Query } from "express-serve-static-core";
-import { Connection, RowDataPacket } from "mysql2/promise";
 
 export interface IResult {
 	recordsTotal: number;
@@ -30,7 +30,7 @@ export class DataTablesSsp {
 	public joins: IColumnJoin[] = [];
 	public extraDataColumns: string[] = [];
 
-	private db: Connection;
+	private db: Pool;
 	private table: string;
 	private primaryKey: string;
 	private columnSettings: IColumnSettings[];
@@ -65,7 +65,7 @@ export class DataTablesSsp {
 	private orderSql: string = "";
 	private joinSql: string = "";
 
-	public constructor(query: Query, db: Connection, table: string, primaryKey: string, columnSettings: IColumnSettings[]) {
+	public constructor(query: Query, db: Pool, table: string, primaryKey: string, columnSettings: IColumnSettings[]) {
 		this.start = parseInt(query.start as string, 10);
 		this.length = parseInt(query.length as string, 10);
 		this.draw = parseInt(query.draw as string, 10);
@@ -198,7 +198,7 @@ export class DataTablesSsp {
 		`;
 	}
 
-	public async run(): Promise<IResult> {
+	public async run(queryTimeout: number = 10_000): Promise<IResult> {
 		this.limit()
 			.order()
 			.join()
@@ -206,16 +206,25 @@ export class DataTablesSsp {
 
 		const bindings = [...this.filterBindings, ...this.customBindings];
 
-		let [rows, fields] = await this.db.query(this.buildTotalCountSql(), this.customBindings);
+		let [rows, fields] = await this.db.query({
+			sql: this.buildTotalCountSql(),
+			values: this.customBindings,
+			timeout: queryTimeout,
+		});
 		const recordsTotal = rows[0].count;
 
-		[rows, fields] = await this.db.query(this.buildFilteredCountSql(), bindings);
+		[rows, fields] = await this.db.query({
+			sql: this.buildFilteredCountSql(),
+			values: bindings,
+			timeout: queryTimeout,
+		});
 		const recordsFiltered = rows[0].count;
 
 		[rows, fields] = await this.db.query({
 			sql: this.sql(),
 			rowsAsArray: true,
 			values: bindings,
+			timeout: queryTimeout,
 		});
 		rows = (rows as any[][]).map(row => {
 			for (let i = 0; i < this.columnSettings.length; ++i) {
