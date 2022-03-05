@@ -80,11 +80,11 @@ export class Armory {
 		app.locals.websiteName = this.config.websiteName;
 		app.locals.iframeMode = this.config.iframeMode;
 
-		app.engine(".html", handlebarsEngine({
-			extname: "html",
+		app.engine(".hbs", handlebarsEngine({
+			extname: "hbs",
 			partialsDir: path.join(process.cwd(), "static", "partials"),
 			layoutsDir: path.join(process.cwd(), "static"),
-			defaultLayout: "layout.html",
+			defaultLayout: "layout.hbs",
 			helpers: {
 				...require("handlebars-helpers")(),
 			},
@@ -139,7 +139,7 @@ export class Armory {
 				status = err;
 			}
 
-			res.status(status).render("error.html", this.getErrorViewData(status, req));
+			res.status(status).render("error.hbs", this.getErrorViewData(status, req));
 		});
 
 		app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -148,7 +148,7 @@ export class Armory {
 
 			// Respond with html page
 			if (req.accepts("html")) {
-				return res.render("error.html", this.getErrorViewData(404, req));
+				return res.render("error.hbs", this.getErrorViewData(404, req));
 			}
 
 			// Respond with json

@@ -38,7 +38,7 @@ export class IndexController {
 	}
 
 	public async index(req: express.Request, res: express.Response): Promise<void> {
-		res.render("index.html", {
+		res.render("index.hbs", {
 			title: "Armory",
 			realms: this.armory.config.realms.map(r => r.name),
 		});

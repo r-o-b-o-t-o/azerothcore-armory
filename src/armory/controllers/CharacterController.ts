@@ -176,7 +176,7 @@ export class CharacterController {
 		});
 		const mounts = await this.getMounts(realmName, charData.guid);
 
-		res.render("character.html", {
+		res.render("character.hbs", {
 			title: `Armory - ${charName}`,
 			...this.makeSharedDataObject(realm, charData),
 			data: JSON.stringify({
@@ -210,7 +210,7 @@ export class CharacterController {
 			return next(404);
 		}
 
-		res.render("character-talents.html", {
+		res.render("character-talents.hbs", {
 			title: `Armory - ${charName} - Talents`,
 			...this.makeSharedDataObject(realm, charData),
 			data: JSON.stringify({
@@ -237,7 +237,7 @@ export class CharacterController {
 			return next(404);
 		}
 
-		res.render("character-achievements.html", {
+		res.render("character-achievements.hbs", {
 			title: `Armory - ${charName} - Achievements`,
 			...this.makeSharedDataObject(realm, charData),
 		});
