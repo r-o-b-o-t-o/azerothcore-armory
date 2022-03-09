@@ -3,6 +3,14 @@ export enum EFaction {
 	Alliance = 1,
 }
 
+export interface IEmblem {
+	icon: string;
+	iconColor: string;
+	border: string;
+	borderColor: string;
+	background: string;
+}
+
 export class Utils {
 	public static raceNames = {
 		1: "human",
@@ -31,5 +39,16 @@ export class Utils {
 
 	public static getFactionFromRaceId(race: number): EFaction {
 		return [1, 3, 4, 7, 11].includes(race) ? EFaction.Alliance : EFaction.Horde;
+	}
+
+	public static makeEmblemObject(obj: any, padWithZeroes: boolean = true): IEmblem {
+		const padLength = padWithZeroes ? 2 : 0;
+		return {
+			icon: obj.emblemStyle.toString().padStart(padLength, "0"),
+			iconColor: obj.emblemColor.toString().padStart(padLength, "0"),
+			border: obj.borderStyle.toString().padStart(padLength, "0"),
+			borderColor: obj.borderColor.toString().padStart(padLength, "0"),
+			background: obj.background.toString().padStart(padLength, "0"),
+		};
 	}
 }

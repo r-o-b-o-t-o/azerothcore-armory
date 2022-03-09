@@ -133,13 +133,7 @@ export class GuildController {
 			name: guild.name,
 			leader: leader.name,
 			faction: Utils.getFactionFromRaceId(leader.race),
-			emblem: {
-				icon: guild.emblemStyle.toString().padStart(2, "0"),
-				iconColor: guild.emblemColor.toString().padStart(2, "0"),
-				border: guild.borderStyle.toString().padStart(2, "0"),
-				borderColor: guild.borderColor.toString().padStart(2, "0"),
-				background: guild.background.toString().padStart(2, "0"),
-			},
+			emblem: Utils.makeEmblemObject(guild),
 			membersCount,
 		};
 	}

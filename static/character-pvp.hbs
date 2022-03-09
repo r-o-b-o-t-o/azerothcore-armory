@@ -1,0 +1,42 @@
+<link rel="stylesheet" type="text/css" href="/css/character-pvp.css">
+{{> emblems}}
+
+{{> character-header }}
+
+<div class="columns is-multiline">
+	<div class="column has-text-centered is-size-5 is-full-touch is-one-quarter-desktop">
+		{{#eq faction 1}}
+		<img class="faction" src="/img/PlusManz-Alliance.png">
+		{{else}}
+		<img class="faction" src="/img/PlusManz-Horde.png">
+		{{/eq}}
+
+		<div>Total Kills: {{kills.total}}</div>
+		<div>Kills Today: {{kills.today}}</div>
+		<div>Kills Yesterday: {{kills.yesterday}}</div>
+	</div>
+
+	{{#each arenaTeams}}
+	<div class="column is-full-touch is-one-quarter-desktop">
+		<div class="box arena-team" data-team-id="{{this.id}}">
+			<div class="info has-text-centered">
+				<div class="is-size-4">{{this.name}}</div>
+				<div class="is-size-5">{{this.type}}v{{this.type}} Team</div>
+				<div>Rating: {{this.rating}}</div>
+				<div>{{this.seasonWins}} W / {{subtract this.seasonGames this.seasonWins}} L</div>
+			</div>
+			<div class="emblem-container">
+				<div class="arena-emblem">
+					<canvas width="74" height="128"></canvas>
+				</div>
+			</div>
+		</div>
+	</div>
+	{{/each}}
+</div>
+
+<script type="application/javascript">
+	{{#each arenaTeams}}
+	createArenaEmblem({{this.type}}, {{{JSONstringify this.emblem}}}, $(".arena-team[data-team-id={{this.id}}] .arena-emblem")[0]);
+	{{/each}}
+</script>

@@ -1,0 +1,26 @@
+.guild-emblem .images,
+.arena-emblem .images {
+	display: none;
+}
+
+.guild-emblem {
+	display: flex;
+	flex-shrink: 0;
+	width: 128px;
+	height: 128px;
+}
+
+.guild-emblem canvas {
+	width: 96px;
+	height: 96px;
+	margin: auto;
+}
+
+.circle {
+	clip-path: circle(50% at 50% 50%);
+}
+
+.arena-emblem {
+	width: 74px;
+	height: 128px;
+}

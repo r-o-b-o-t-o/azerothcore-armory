@@ -1,0 +1,9 @@
+.arena-team {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+.arena-team .info {
+	margin-right: 2rem;
+}

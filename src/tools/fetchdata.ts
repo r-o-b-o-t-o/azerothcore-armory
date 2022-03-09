@@ -18,18 +18,18 @@ require("source-map-support").install();
 const baseUrl = "https://wow.zamimg.com/modelviewer/live";
 
 class Stopwatch {
-	private startTime: Date;
+	private startTime: number;
 
 	public constructor() {
 		this.start();
 	}
 
 	public start(): void {
-		this.startTime = new Date();
+		this.startTime = Date.now();
 	}
 
 	public stop(text?: string): void {
-		const dt = Date.now() - this.startTime.getTime();
+		const dt = Date.now() - this.startTime;
 		const txt = text ?? "Done in {time}";
 		console.log(txt.replace("{time}", prettyMs(dt)));
 	}

@@ -1,13 +1,15 @@
 <link rel="stylesheet" type="text/css" href="/css/guild.css">
 {{> datatables}}
+{{> emblems}}
 
 <a href="/">Back to Armory</a>
 <br><br>
 
 <div id="guild-header">
-	<div class="emblem">
-		<div id="emblem" class="shape-outer circle">
-			<canvas class="shape-inner circle" width="128" height="96"></canvas>
+	<div class="emblem-container">
+		<div class="guild-emblem circle">
+			<div class="images"></div>
+			<canvas class="circle" width="128" height="96"></canvas>
 		</div>
 	</div>
 
@@ -36,14 +38,6 @@
 </div>
 
 <br>
-<div id="emblem-images">
-	<img id="emblem-bg-upper" src="/img/guild-emblems/Background_{{emblem.background}}_TU_U.PNG">
-	<img id="emblem-bg-lower" src="/img/guild-emblems/Background_{{emblem.background}}_TL_U.PNG">
-	<img id="emblem-icon-upper" src="/img/guild-emblems/Emblem_{{emblem.icon}}_{{emblem.iconColor}}_TU_U.PNG">
-	<img id="emblem-icon-lower" src="/img/guild-emblems/Emblem_{{emblem.icon}}_{{emblem.iconColor}}_TL_U.PNG">
-	<img id="emblem-border-upper" src="/img/guild-emblems/Border_{{emblem.border}}_{{emblem.borderColor}}_TU_U.PNG">
-	<img id="emblem-border-lower" src="/img/guild-emblems/Border_{{emblem.border}}_{{emblem.borderColor}}_TL_U.PNG">
-</div>
 
 <table id="members" class="stripe hover row-border">
 	<thead>
@@ -60,59 +54,7 @@
 </table>
 
 <script type="application/javascript">
-	function createEmblem() {
-		const canvas = $("#emblem canvas")[0];
-		const ctx = canvas.getContext("2d");
-
-		const mask = $("#emblem-mask")[0];
-		const bgUpper = $("#emblem-bg-upper")[0];
-		const bgLower = $("#emblem-bg-lower")[0];
-		const iconUpper = $("#emblem-icon-upper")[0];
-		const iconLower = $("#emblem-icon-lower")[0];
-
-		ctx.beginPath();
-		ctx.moveTo(0, 0);
-		ctx.lineTo(26, 0);
-		ctx.lineTo(64, 28);
-		ctx.lineTo(102, 0);
-		ctx.lineTo(128, 0);
-		ctx.lineTo(128, 96);
-		ctx.lineTo(0, 96);
-		ctx.closePath();
-		ctx.clip();
-		drawEmblemLayer(canvas, ctx, "bg");
-		drawEmblemLayer(canvas, ctx, "icon");
-		drawEmblemLayer(canvas, ctx, "border");
-	}
-
-	function drawEmblemLayer(canvas, ctx, layer) {
-		const upper = $(`#emblem-${layer}-upper`)[0];
-		const lower = $(`#emblem-${layer}-lower`)[0];
-
-		const w = upper.width / 2;
-		const uh = upper.height;
-		const lh = lower.height;
-
-		ctx.drawImage(upper, 0, 0, w, uh, w, 0, w, uh);
-		ctx.drawImage(lower, 0, 0, w, lh, w, upper.height, w, lh);
-		ctx.save();
-		ctx.scale(-1, 1);
-		ctx.drawImage(upper, 0, 0, w, uh, 0, 0, -w, uh);
-		ctx.drawImage(lower, 0, 0, w, lh, 0, upper.height, -w, lh);
-		ctx.restore();
-	}
-
-	const emblemLoadPromises = $("#emblem-images img").map((idx, img) => {
-		return new Promise((res, rej) => {
-			if (img.complete) {
-				res();
-			} else {
-				img.addEventListener("load", res);
-				img.addEventListener("error", rej);
-			}
-		});
-	});
-	Promise.all(emblemLoadPromises).then(createEmblem);
+	createGuildEmblem({{{JSONstringify emblem}}}, $(".emblem-container .guild-emblem")[0]);
 
 	dt = $("#members").DataTable({
 		processing: true,

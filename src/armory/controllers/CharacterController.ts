@@ -178,9 +178,9 @@ export class CharacterController {
 		const mounts = await this.getMounts(realmName, charData.guid);
 
 		res.render("character.hbs", {
-			title: `Armory - ${charName}`,
+			title: `Armory - ${charData.name}`,
 			...this.makeSharedDataObject(realm, charData),
-			data: JSON.stringify({
+			data: {
 				race: charData.race,
 				gender: charData.gender,
 				class: charData.class,
@@ -189,7 +189,7 @@ export class CharacterController {
 				customizationOptions: customization,
 				equipment,
 				mounts,
-			}),
+			},
 		});
 
 		this.armory.gc();
@@ -212,13 +212,13 @@ export class CharacterController {
 		}
 
 		res.render("character-talents.hbs", {
-			title: `Armory - ${charName} - Talents`,
+			title: `Armory - ${charData.name} - Talents`,
 			...this.makeSharedDataObject(realm, charData),
-			data: JSON.stringify({
+			data: {
 				talents: await this.getTalents(realm.name, charData.guid),
 				trees: await this.getTalentTrees(charData.class),
 				glyphs: await this.getGlyphs(realm.name, charData.guid),
-			}),
+			},
 		});
 	}
 
@@ -239,7 +239,7 @@ export class CharacterController {
 		}
 
 		res.render("character-achievements.hbs", {
-			title: `Armory - ${charName} - Achievements`,
+			title: `Armory - ${charData.name} - Achievements`,
 			...this.makeSharedDataObject(realm, charData),
 		});
 	}
@@ -263,6 +263,31 @@ export class CharacterController {
 		res.json({
 			categories: await this.armory.dbc.achievementCategory().toArray(),
 			...await this.getAchievements(realm.name, charData),
+		});
+	}
+
+	public async pvp(req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> {
+		const realmName = req.params.realm;
+		const charName = req.params.name;
+
+		const realm = this.armory.getRealm(realmName);
+		if (realm === undefined) {
+			// Could not find realm
+			return next(404);
+		}
+
+		const charData = await this.getCharacterData(realm, charName);
+		if (charData === null) {
+			// Could not find character
+			return next(404);
+		}
+
+		res.render("character-pvp.hbs", {
+			title: `Armory - ${charData.name} - PvP`,
+			...this.makeSharedDataObject(realm, charData),
+			faction: Utils.getFactionFromRaceId(charData.race),
+			kills: await this.getPvpKills(realm.name, charData.guid),
+			arenaTeams: await this.getArenaTeams(realm.name, charData.guid),
 		});
 	}
 
@@ -323,7 +348,7 @@ export class CharacterController {
 				FROM character_spell
 				WHERE guid = ? AND spell IN (?)
 			`,
-			values:[charGuid, this.mountSpells],
+			values: [charGuid, this.mountSpells],
 			timeout: this.armory.config.dbQueryTimeout,
 		});
 
@@ -769,5 +794,45 @@ export class CharacterController {
 			achievements,
 			earned,
 		};
+	}
+
+	private async getPvpKills(realm: string, charGuid: number): Promise<{ total: number, today: number, yesterday: number }> {
+		const [rows, fields] = await this.armory.getCharactersDb(realm).query({
+			sql: `
+				SELECT totalKills, todayKills, yesterdayKills
+				FROM characters
+				WHERE guid = ?
+			`,
+			values: [charGuid],
+			timeout: this.armory.config.dbQueryTimeout,
+		});
+		const row = rows[0];
+
+		return {
+			total: row.totalKills,
+			today: row.todayKills,
+			yesterday: row.yesterdayKills,
+		};
+	}
+
+	private async getArenaTeams(realm: string, charGuid: number): Promise<any[]> {
+		const [rows, fields] = await this.armory.getCharactersDb(realm).query({
+			sql: `
+				SELECT
+					arena_team.arenaTeamId AS id, arena_team.name, arena_team.type, arena_team.rating, arena_team.seasonWins, arena_team.seasonGames,
+					arena_team.backgroundColor AS background, arena_team.emblemStyle, arena_team.emblemColor, arena_team.borderStyle, arena_team.borderColor
+				FROM arena_team_member
+				LEFT JOIN arena_team ON arena_team_member.arenaTeamId = arena_team.arenaTeamId
+				WHERE guid = ?
+				ORDER BY arena_team.type ASC
+			`,
+			values: [charGuid],
+			timeout: this.armory.config.dbQueryTimeout,
+		});
+
+		return (rows as RowDataPacket[]).map(row => {
+			row.emblem = Utils.makeEmblemObject(row, false);
+			return row;
+		});
 	}
 }

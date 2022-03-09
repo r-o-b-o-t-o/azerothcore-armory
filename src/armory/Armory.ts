@@ -138,6 +138,7 @@ export class Armory {
 		app.get("/character/:realm/:name/talents", this.wrapRoute(charsController.talents.bind(charsController)));
 		app.get("/character/:realm/:name/achievements", this.wrapRoute(charsController.achievements.bind(charsController)));
 		app.get("/character/:realm/:character/achievements/data", this.wrapRoute(charsController.achievementsData.bind(charsController)));
+		app.get("/character/:realm/:name/pvp", this.wrapRoute(charsController.pvp.bind(charsController)));
 
 		const guildsController = new GuildController(this);
 		app.get("/guild/:realm/:name", this.wrapRoute(guildsController.guild.bind(guildsController)));

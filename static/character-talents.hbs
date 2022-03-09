@@ -53,7 +53,7 @@
 </div>
 
 <script type="application/javascript">
-	const talentsData = JSON.parse(`{{{data}}}`);
+	const talentsData = {{{JSONstringify data}}};
 
 	for (let spec = 0; spec < 2; ++spec) {
 		const $spec = $(`#talents-spec-${spec}`);
