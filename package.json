@@ -1,6 +1,6 @@
 {
 	"name": "azerothcore-armory",
-	"version": "0.10.0",
+	"version": "0.11.0",
 	"description": "",
 	"scripts": {
 		"build": "tsc -p tsconfig.json",
@@ -32,6 +32,7 @@
 		"@supercharge/promise-pool": "^2.1.0",
 		"camelcase": "^6.3.0",
 		"cli-progress": "^3.10.0",
+		"dotenv": "^16.0.0",
 		"express": "^4.17.3",
 		"express-handlebars": "^6.0.2",
 		"glob": "^7.2.0",
