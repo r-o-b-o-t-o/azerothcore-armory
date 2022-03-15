@@ -38,8 +38,8 @@ export class Armory {
 			),
 			transports: [
 				new winston.transports.Console({ level: "debug" }),
-				new winston.transports.File({ filename: "armory.error.log", level: "error" }),
-				new winston.transports.File({ filename: "armory.combined.log", level: "http" }),
+				new winston.transports.File({ filename: path.join("logs", "armory.error.log"), level: "error" }),
+				new winston.transports.File({ filename: path.join("logs", "armory.combined.log"), level: "http" }),
 			],
 		});
 		this.charsetCache = {};

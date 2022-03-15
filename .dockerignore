@@ -1,0 +1,20 @@
+# Dependency directories
+node_modules/
+
+# Build directory
+build/
+
+# Downloaded data files
+data/*
+!data/*.csv
+!data/background.png
+
+# Configuration
+config.json
+.env
+
+# Log files
+*.log
+
+# Git folder
+.git/

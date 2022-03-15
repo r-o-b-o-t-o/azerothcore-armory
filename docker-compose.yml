@@ -1,0 +1,19 @@
+services:
+    armory:
+        restart: unless-stopped
+        build:
+            context: .
+            dockerfile: Dockerfile
+        volumes:
+            - ./data:/data/
+            - ./logs:/logs/
+        env_file:
+            - .env
+        networks:
+            - local-private-net
+        ports:
+            - 48733:48733
+
+networks:
+    local-private-net:
+        driver: bridge
