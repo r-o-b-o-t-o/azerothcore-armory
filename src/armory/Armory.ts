@@ -207,7 +207,7 @@ export class Armory {
 		if (!(realm in this.charsetCache)) {
 			const [rows, fields] = await db.query({
 				sql: `
-					SELECT CCSA.character_set_name FROM information_schema.\`TABLES\` T,
+					SELECT CCSA.character_set_name AS charset FROM information_schema.\`TABLES\` T,
 					information_schema.\`COLLATION_CHARACTER_SET_APPLICABILITY\` CCSA
 					WHERE CCSA.collation_name = T.table_collation
 					AND T.table_schema = "${(await db.getConnection()).config.database}"
@@ -215,7 +215,7 @@ export class Armory {
 				`,
 				timeout: this.config.dbQueryTimeout,
 			});
-			this.charsetCache[realm] = rows[0].character_set_name;
+			this.charsetCache[realm] = rows[0].charset;
 		}
 		return this.charsetCache[realm];
 	}
