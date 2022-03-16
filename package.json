@@ -1,6 +1,6 @@
 {
 	"name": "azerothcore-armory",
-	"version": "0.13.1",
+	"version": "0.13.2",
 	"description": "",
 	"scripts": {
 		"build": "tsc -p tsconfig.json",

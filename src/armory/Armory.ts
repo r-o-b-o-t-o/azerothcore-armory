@@ -151,7 +151,7 @@ export class Armory {
 
 		const guildsController = new GuildController(this);
 		app.get("/guild/:realm/:name", this.wrapRoute(guildsController.guild.bind(guildsController)));
-		app.get("/guild/:realm/:name/members", this.wrapRoute(guildsController.members.bind(guildsController)));
+		app.get("/guild/:realm/:guild/members", this.wrapRoute(guildsController.members.bind(guildsController)));
 
 		app.use((err, req: express.Request, res: express.Response, next: express.NextFunction) => {
 			// Error handler

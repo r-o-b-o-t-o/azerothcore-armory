@@ -44,7 +44,7 @@ export class GuildController {
 
 	public async members(req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> {
 		const realmName = req.params.realm;
-		const guildName = req.params.name;
+		const guildId = parseInt(req.params.guild);
 
 		const realm = this.armory.getRealm(realmName);
 		if (realm === undefined) {
@@ -52,8 +52,7 @@ export class GuildController {
 			return next(404);
 		}
 
-		const guildId = await this.getGuildId(realm, guildName);
-		if (guildId === null) {
+		if (isNaN(guildId) || !(await this.guildExists(realm, guildId))) {
 			// Could not find guild
 			return next(404);
 		}
@@ -153,6 +152,20 @@ export class GuildController {
 		}
 
 		return rows[0].guildid;
+	}
+
+	private async guildExists(realm: IRealmConfig, id: number): Promise<boolean> {
+		const db = this.armory.getCharactersDb(realm.name);
+		const [rows, fields] = await db.query({
+			sql: `
+				SELECT guildid
+				FROM guild WHERE guildid
+			`,
+			values: [id],
+			timeout: this.armory.config.dbQueryTimeout,
+		});
+
+		return (rows as RowDataPacket[]).length !== 0;
 	}
 
 	private async getGuildRanks(realm: IRealmConfig, id: number): Promise<IGuildRank[]> {
