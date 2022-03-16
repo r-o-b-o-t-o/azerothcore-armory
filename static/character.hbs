@@ -1,7 +1,7 @@
-<link rel="stylesheet" type="text/css" href="/css/character.css">
+<link rel="stylesheet" type="text/css" href="{{websiteRoot}}/css/character.css">
 {{> icons }}
 
-<script type="application/javascript" src="/js/viewer.min.js"></script>
+<script type="application/javascript" src="{{websiteRoot}}/js/viewer.min.js"></script>
 <script type="application/javascript" src="{{aowow}}/static/widgets/power.js"></script>
 
 {{> character-header }}
@@ -139,7 +139,7 @@
 		$item
 			.data("icon", icon)
 			.find(".inventory-slot")
-			.css("background-image", `url("/img/inventory-slot/${invSlot}.png")`);
+			.css("background-image", `url("{{websiteRoot}}/img/inventory-slot/${invSlot}.png")`);
 		if (item !== undefined) {
 			$item.data("item", item);
 			$item.find("a").attr("href", `{{aowow}}/?item=${item}`);
@@ -209,7 +209,7 @@
 		$("#mounts-container").hide();
 	} else {
 		const $dismount = $mountTemplate.clone();
-		$dismount.find(".icon").css("background-image", `url("/img/UI-GearManager-LeaveItem.png")`);
+		$dismount.find(".icon").css("background-image", `url("{{websiteRoot}}/img/UI-GearManager-LeaveItem.png")`);
 		$dismount.find("a")
 			.on("click", () => {
 				setMount(0);
@@ -235,7 +235,7 @@
 
 	const characterModel = {
 		type: ZamModelViewer.WOW,
-		contentPath: "/data/",
+		contentPath: "{{websiteRoot}}/data/",
 		background: "background.png",
 		container: $model,
 		hd: true,

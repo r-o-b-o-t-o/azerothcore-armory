@@ -78,10 +78,19 @@ export class Armory {
 
 		this.logger.info("Starting server...");
 
-		app.locals.aowow = this.config.aowowUrl;
-		app.locals.websiteUrl = this.config.websiteUrl;
-		app.locals.websiteName = this.config.websiteName;
-		app.locals.iframeMode = this.config.iframeMode;
+		const locals = {
+			aowow: this.config.aowowUrl,
+			websiteUrl: this.config.websiteUrl,
+			websiteName: this.config.websiteName,
+			websiteRoot: this.config.websiteRoot,
+			iframeMode: this.config.iframeMode,
+		};
+		for (const key in locals) {
+			if (locals.hasOwnProperty(key)) {
+				app.locals[key] = locals[key];
+			}
+		}
+		app.locals.locals = locals;
 
 		app.engine(".hbs", handlebarsEngine({
 			extname: "hbs",

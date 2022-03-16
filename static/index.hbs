@@ -1,4 +1,4 @@
-<link rel="stylesheet" type="text/css" href="/css/index.css">
+<link rel="stylesheet" type="text/css" href="{{websiteRoot}}/css/index.css">
 {{> datatables}}
 
 <h1 class="title is-size-1">Armory</h1>
@@ -45,7 +45,7 @@
 		serverSide: true,
 		searchDelay: 800,
 		ajax: {
-			url: `/search`,
+			url: `{{websiteRoot}}/search`,
 			data: d => {
 				d.realm = $("#select-realm").val();
 			},
@@ -53,11 +53,11 @@
 		columnDefs: [
 			{
 				targets: 0,
-				render: (name, type, row, meta) => `<a href="/character/${meta.settings.json.realm}/${name}">${name}</a>`,
+				render: (name, type, row, meta) => `<a href="{{websiteRoot}}/character/${meta.settings.json.realm}/${name}">${name}</a>`,
 			},
 			{
 				targets: 1,
-				render: (guild, type, row, meta) => guild === null ? "" : `<a href="/guild/${meta.settings.json.realm}/${guild}">${guild}</a>`,
+				render: (guild, type, row, meta) => guild === null ? "" : `<a href="{{websiteRoot}}/guild/${meta.settings.json.realm}/${guild}">${guild}</a>`,
 			},
 			{
 				searchable: false,

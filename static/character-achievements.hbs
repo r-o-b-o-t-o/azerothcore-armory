@@ -1,4 +1,13 @@
-<link rel="stylesheet" type="text/css" href="/css/character-achievements.css">
+<link rel="stylesheet" type="text/css" href="{{websiteRoot}}/css/character-achievements.css">
+<style>
+	.achievement .points.no-points {
+		background-image: url("{{websiteRoot}}/img/UI-Achievement-Shields-NoPoints.png");
+	}
+
+	.achievement .points {
+		background-image: url("{{websiteRoot}}/img/UI-Achievement-Shields.png");
+	}
+</style>
 {{> icons }}
 <script type="application/javascript" src="{{aowow}}/static/widgets/power.js"></script>
 
@@ -8,7 +17,7 @@
 	<div class="column has-text-centered title is-size-3">
 		<span>Achievement Points:</span>
 		<span id="total-points"></span>
-		<img id="total-points-icon" src="/img/UI-Achievement-TinyShield.png">
+		<img id="total-points-icon" src="{{websiteRoot}}/img/UI-Achievement-TinyShield.png">
 	</div>
 </div>
 <br class="is-hidden-touch">
@@ -205,7 +214,7 @@
 		$totalRow.prependTo($("#progress-bars")); // Move the total bar to the top
 	}
 
-	$.getJSON(`/character/{{realm}}/{{guid}}/achievements/data`, (data) => {
+	$.getJSON(`{{websiteRoot}}/character/{{realm}}/{{guid}}/achievements/data`, (data) => {
 		achievementsData = data;
 
 		const $summaryLink = $("<a>")

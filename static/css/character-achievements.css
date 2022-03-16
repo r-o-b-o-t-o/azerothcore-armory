@@ -60,7 +60,6 @@
 }
 
 .achievement .points {
-	background-image: url("/img/UI-Achievement-Shields.png");
 	background-repeat: no-repeat;
 	width: 64px;
 	height: 64px;
@@ -85,10 +84,6 @@
 	top: 4px;
 	left: 50%;
 	transform: translateX(-50%);
-}
-
-.achievement .points.no-points {
-	background-image: url("/img/UI-Achievement-Shields-NoPoints.png");
 }
 
 .achievement .points.no-points .value {

@@ -1,16 +1,16 @@
-<a href="/">Back to Armory</a>
+<a href="{{websiteRoot}}/">Back to Armory</a>
 <br><br>
 
-<a href="/character/{{realm}}/{{name}}">Character</a>&ensp;
-<a href="/character/{{realm}}/{{name}}/talents">Talents</a>&ensp;
-<a href="/character/{{realm}}/{{name}}/achievements">Achievements</a>
-<a href="/character/{{realm}}/{{name}}/pvp">PvP</a>
+<a href="{{websiteRoot}}/character/{{realm}}/{{name}}">Character</a>&ensp;
+<a href="{{websiteRoot}}/character/{{realm}}/{{name}}/talents">Talents</a>&ensp;
+<a href="{{websiteRoot}}/character/{{realm}}/{{name}}/achievements">Achievements</a>
+<a href="{{websiteRoot}}/character/{{realm}}/{{name}}/pvp">PvP</a>
 <br>
 <br>
 
 <div class="char-name title is-size-3">{{name}}</div>
 {{#if guild}}
-<a class="guild-name title is-size-4" href="/guild/{{realm}}/{{guild}}">&lt;{{guild}}&gt;</a>
+<a class="guild-name title is-size-4" href="{{websiteRoot}}/guild/{{realm}}/{{guild}}">&lt;{{guild}}&gt;</a>
 {{/if}}
 <div class="is-size-5">
 	Level <span class="char-level">{{level}}</span>
