@@ -1,8 +1,13 @@
-<link rel="stylesheet" type="text/css" href="/css/guild.css">
+<link rel="stylesheet" type="text/css" href="{{websiteRoot}}/css/guild.css">
+<style>
+	.guild-emblem {
+		background: url("{{websiteRoot}}/img/guild-emblems/circle.png") no-repeat center;
+	}
+</style>
 {{> datatables}}
 {{> emblems}}
 
-<a href="/">Back to Armory</a>
+<a href="{{websiteRoot}}/">Back to Armory</a>
 <br><br>
 
 <div id="guild-header">
@@ -17,19 +22,19 @@
 		<div class="char-name title is-size-3">&lt;{{name}}&gt;</div>
 		<div class="is-size-5">
 			<div>
-				Guild Master: <a href="/character/{{realm}}/{{leader}}">{{leader}}</a>
+				Guild Master: <a href="{{websiteRoot}}/character/{{realm}}/{{leader}}">{{leader}}</a>
 			</div>
 			<div>
 				{{membersCount}} members
 			</div>
 			{{#eq faction 1}}
 			<div class="faction">
-				<img class="logo" src="/img/PlusManz-Alliance.png">
+				<img class="logo" src="{{websiteRoot}}/img/PlusManz-Alliance.png">
 				<span>Alliance</span>
 			</div>
 			{{else}}
 			<div class="faction">
-				<img class="logo" src="/img/PlusManz-Horde.png">
+				<img class="logo" src="{{websiteRoot}}/img/PlusManz-Horde.png">
 				<span>Horde</span>
 			</div>
 			{{/eq}}
@@ -54,19 +59,19 @@
 </table>
 
 <script type="application/javascript">
-	createGuildEmblem({{{JSONstringify emblem}}}, $(".emblem-container .guild-emblem")[0]);
+	createGuildEmblem({{{ JSONstringify emblem }}}, $(".emblem-container .guild-emblem")[0]);
 
 	dt = $("#members").DataTable({
 		processing: true,
 		serverSide: true,
 		searchDelay: 800,
 		ajax: {
-			url: `/guild/{{realm}}/{{name}}/members`,
+			url: `{{websiteRoot}}/guild/{{realm}}/{{name}}/members`,
 		},
 		columnDefs: [
 			{
 				targets: 0,
-				render: (name) => `<a href="/character/{{realm}}/${name}">${name}</a>`,
+				render: (name) => `<a href="{{websiteRoot}}/character/{{realm}}/${name}">${name}</a>`,
 			},
 			{
 				targets: 1,

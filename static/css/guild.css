@@ -21,10 +21,6 @@
 	margin-right: 4px;
 }
 
-.guild-emblem {
-	background: url("/img/guild-emblems/circle.png") no-repeat center;
-}
-
 #members_processing {
 	height: 70px;
 }

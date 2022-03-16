@@ -16,7 +16,7 @@ function createGuildEmblem(emblem, el) {
 	const canvas = $emblem.find("canvas")[0];
 	const ctx = canvas.getContext("2d");
 
-	const imgUrl = (type, section, value, value2) => `/img/guild-emblems/${type}_${value}${value2 ? ("_" + value2) : ""}_T${section}_U.PNG`;
+	const imgUrl = (type, section, value, value2) => `${handlebarsData.websiteRoot}/img/guild-emblems/${type}_${value}${value2 ? ("_" + value2) : ""}_T${section}_U.PNG`;
 
 	const $images = $("<div>").addClass("images").appendTo($emblem);
 	const bgUpper = $("<img>").attr("src", imgUrl("Background", "U", emblem.background)).appendTo($images)[0];
@@ -64,7 +64,7 @@ function createArenaEmblem(teamSize, emblem, el) {
 	const canvas = $emblem.find("canvas")[0];
 	const ctx = canvas.getContext("2d");
 
-	const imgUrl = (teamSize, type, value) => `/img/arena-banners/PVP-Banner${teamSize ? ("-" + teamSize) : ""}${type ? ("-" + type) : ""}${value ? ("-" + value) : ""}.PNG`;
+	const imgUrl = (teamSize, type, value) => `${handlebarsData.websiteRoot}/img/arena-banners/PVP-Banner${teamSize ? ("-" + teamSize) : ""}${type ? ("-" + type) : ""}${value ? ("-" + value) : ""}.PNG`;
 
 	const $images = $("<div>").addClass("images").appendTo($emblem);
 	const banner = $("<img>").attr("src", imgUrl(teamSize)).appendTo($images)[0];
