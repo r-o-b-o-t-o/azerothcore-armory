@@ -7,7 +7,7 @@ build/
 # Downloaded data files
 data/*
 !data/*.csv
-!data/background.png
+!data/*.png
 
 # Configuration
 config.json

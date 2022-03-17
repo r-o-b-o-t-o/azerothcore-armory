@@ -135,7 +135,7 @@ export class Armory {
 		app.use("/data/meta", express.static(`data/meta`));
 		app.use("/data/bone", express.static(`data/bone`));
 		app.use("/data/textures", express.static(`data/textures`));
-		app.use("/data/background.png", express.static(`data/background.png`));
+		app.use("/data/background.png", express.static(`data/modelviewer-background.png`));
 
 		const indexController = new IndexController(this);
 		app.get("/", this.wrapRoute(indexController.index.bind(indexController)));
