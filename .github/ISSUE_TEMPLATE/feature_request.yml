@@ -1,0 +1,40 @@
+name: Feature request
+description: Suggest an idea for this project
+labels:
+    - enhancement
+body:
+    -
+        type: markdown
+        attributes:
+            value: >
+                Thank you for taking your time to fill out a feature request.
+                Remember to fill out all required fields, including the title above.
+    -
+        type: textarea
+        id: description
+        attributes:
+            label: Describe your feature request or suggestion in detail
+            description: |
+                A clear description of what you would like to see implemented.
+                If applicable, add screenshots, images, or videos to help explain your suggestion.
+        validations:
+            required: true
+    -
+        type: textarea
+        id: solution
+        attributes:
+            label: Describe a possible solution to your suggestion
+            description: >
+                A clear description of any alternative solutions or
+                features you've considered.
+        validations:
+            required: false
+    -
+        type: textarea
+        id: additional
+        attributes:
+            label: Additional context
+            description: >
+                Add any other context about the feature request here.
+        validations:
+            required: false

@@ -1,0 +1,81 @@
+name: Bug report
+description: Create a bug report to help us improve
+labels:
+    - bug
+body:
+    -
+        type: markdown
+        attributes:
+            value: >
+                Thank you for taking the time to fill out a bug report.
+                Remember to fill out all required fields, including the title above.
+    -
+        type: textarea
+        id: current
+        attributes:
+            label: Current Behaviour
+            description: >
+                Describe the problem or bug that you are encountering.
+                If applicable, add screenshots, images, or videos to help explain your problem.
+        validations:
+            required: true
+    -
+        type: textarea
+        id: expected
+        attributes:
+            label: Expected behaviour
+            description: |
+                What should happen instead?
+        validations:
+            required: false
+    -
+        type: textarea
+        id: reproduce
+        attributes:
+            label: Reproduction steps
+            description: |
+                What does someone else need to do to encounter the same bug?
+            placeholder: |
+                1. Step 1
+                2. Step 2
+                3. Step 3
+        validations:
+            required: true
+    -
+        type: textarea
+        id: server-specs
+        attributes:
+            label: Server operating system
+            description: |
+                What OS do you run the Armory on? (name, version, etc)
+        validations:
+            required: true
+    -
+        type: textarea
+        id: client-specs
+        attributes:
+            label: Client operating system and browser
+            description: |
+                What OS and web browser does the issue occur on? (names and versions)
+        validations:
+            required: true
+    -
+        type: textarea
+        id: armory-commit
+        attributes:
+            label: Armory revision
+            description: >
+                Which version of `azerothcore-armory` are you using?
+                You can either copy the output of `git log -1 --pretty=format:%h` or copy the value of the `version` field in `package.json`.
+        validations:
+            required: true
+    -
+        type: textarea
+        id: ac-commit
+        attributes:
+            label: AzerothCore revision (commit hash)
+            description: >
+                The version of your AzerothCore server.
+                You can copy the first line from the `.server info` command's output.
+        validations:
+            required: true

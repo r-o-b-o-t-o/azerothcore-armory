@@ -1,0 +1,15 @@
+name: Question
+description: Ask a question to the maintainers of this project
+labels:
+    - question
+body:
+    -
+        type: textarea
+        id: description
+        attributes:
+            label: Your question
+            description: |
+                Describe your question with as much detail as possible.
+                If applicable, add screenshots, images, or videos to help explain your question.
+        validations:
+            required: true
