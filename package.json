@@ -1,6 +1,6 @@
 {
 	"name": "azerothcore-armory",
-	"version": "0.13.2",
+	"version": "1.0.0",
 	"description": "",
 	"scripts": {
 		"build": "tsc -p tsconfig.json",
@@ -12,6 +12,7 @@
 		"cleardata": "rimraf data/bone data/meta data/mo3 data/textures"
 	},
 	"author": "https://github.com/r-o-b-o-t-o",
+	"homepage": "https://github.com/r-o-b-o-t-o/azerothcore-armory",
 	"license": "MIT",
 	"devDependencies": {
 		"@types/cli-progress": "^3.9.2",
