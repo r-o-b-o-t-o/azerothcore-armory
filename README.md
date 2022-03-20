@@ -11,11 +11,11 @@
 	<p align="center">
 		A website to view your <a href="https://github.com/azerothcore/azerothcore-wotlk">AzerothCore</a> server's characters
 		<br />
-		<a href="https://github.com/r-o-b-o-t-o/azerothcore-armory/issues/new?template=bug_report.yml">Report a Bug</a>
+		<a href="https://github.com/r-o-b-o-t-o/azerothcore-armory/issues/new?assignees=&labels=bug&template=bug_report.yml">Report a Bug</a>
 		·
-		<a href="https://github.com/r-o-b-o-t-o/azerothcore-armory/issues/new?template=feature_request.yml">Request a Feature</a>
+		<a href="https://github.com/r-o-b-o-t-o/azerothcore-armory/issues/new?assignees=&labels=enhancement&template=feature_request.yml">Suggest a Feature</a>
 		·
-		<a href="https://github.com/r-o-b-o-t-o/azerothcore-armory/issues/new?template=question.yml">Ask a Question</a>
+		<a href="https://github.com/r-o-b-o-t-o/azerothcore-armory/issues/new?labels=question&template=question.yml">Ask a Question</a>
 	</p>
 </div>
 
@@ -324,4 +324,4 @@ Distributed under the MIT License. See the [`LICENSE`][license-url] file for mor
 [issues-url]: https://github.com/r-o-b-o-t-o/azerothcore-armory/issues
 [license-shield]: https://img.shields.io/github/license/r-o-b-o-t-o/azerothcore-armory.svg?style=flat
 [license-url]: https://github.com/r-o-b-o-t-o/azerothcore-armory/blob/master/LICENSE
-[feature-request]: https://github.com/r-o-b-o-t-o/azerothcore-armory/issues/new?template=feature_request.yml
+[feature-request]: https://github.com/r-o-b-o-t-o/azerothcore-armory/issues/new?assignees=&labels=enhancement&template=feature_request.yml
