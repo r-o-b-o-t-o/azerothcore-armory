@@ -16,6 +16,8 @@
 		<a href="https://github.com/r-o-b-o-t-o/azerothcore-armory/issues/new?assignees=&labels=enhancement&template=feature_request.yml">Suggest a Feature</a>
 		·
 		<a href="https://github.com/r-o-b-o-t-o/azerothcore-armory/issues/new?labels=question&template=question.yml">Ask a Question</a>
+		·
+		<a href="https://www.chromiecraft.com/armory">Demo</a>
 	</p>
 </div>
 
