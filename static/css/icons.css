@@ -45,6 +45,7 @@
 	position: absolute;
 	background-repeat: no-repeat;
 	z-index: 1;
+	background-size: 36px;
 }
 
 .iconlarge {
