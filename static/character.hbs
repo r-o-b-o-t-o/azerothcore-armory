@@ -66,7 +66,7 @@
 		debug: () => { },
 	};
 
-	const charData = {{{JSONstringify data}}};
+	const charData = {{{ JSONstringify data }}};
 	const races = {
 		1: "human",
 		2: "orc",
@@ -199,10 +199,37 @@
 	onResize(true);
 
 	function setMount(mountId) {
-		if (characterModel.mount.id !== mountId) {
-			characterModel.mount.id = mountId;
-			createViewer();
+		if (characterModel.mount.id === mountId) {
+			return;
 		}
+
+		if (mountId !== 0) {
+			const mainHand = charData.equipment.find(e => e.slot === 15);
+			const offHand = charData.equipment.find(e => e.slot === 16);
+			const ranged = charData.equipment.find(e => e.slot === 17);
+
+			characterModel.charCustomization.sheathMain = sheathTypes[mainHand.classId][mainHand.subclassId];
+			if (offHand !== undefined) {
+				characterModel.charCustomization.sheathOff = sheathTypes[offHand.classId][offHand.subclassId];
+			} else if (ranged !== undefined) {
+				characterModel.charCustomization.sheathOff = sheathTypes[ranged.classId][ranged.subclassId];
+			} else {
+				characterModel.charCustomization.sheathOff = -1;
+			}
+
+			if (characterModel.charCustomization.sheathMain === undefined) {
+				characterModel.charCustomization.sheathMain = 0;
+			}
+			if (characterModel.charCustomization.sheathOff === undefined) {
+				characterModel.charCustomization.sheathOff = 0;
+			}
+		} else {
+			characterModel.charCustomization.sheathMain = -1;
+			characterModel.charCustomization.sheathOff = -1;
+		}
+
+		characterModel.mount.id = mountId;
+		createViewer();
 	}
 
 	if (charData.mounts.length === 0) {
@@ -232,6 +259,38 @@
 	$("#btn-mounts").on("click", () => {
 		$("#mounts").slideToggle("fast");
 	});
+
+	const sheathTypes = {
+		2: {
+			// One handed weapons
+			0: 3,
+			4: 3,
+			7: 3,
+			14: 3,
+			15: 3,
+			17: 3,
+			20: 3,
+
+			// Two handed weapons
+			1: 1,
+			5: 1,
+			8: 1,
+
+			// Others
+			10: 2, // Staff
+			6: 1, // Polearm
+			2: 4, // Bow
+			3: 4, // Gun
+			18: 4, // Crossbow
+			13: 0, // Fist weapons
+			19: 3, // Wand
+			20: 1, // Fishing pole
+		},
+		4: {
+			0: 3, // Held in off-hand
+			6: 9, // Shield
+		},
+	};
 
 	const characterModel = {
 		type: ZamModelViewer.WOW,

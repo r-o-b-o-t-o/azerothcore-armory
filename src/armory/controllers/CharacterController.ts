@@ -29,6 +29,8 @@ interface IEquipmentData {
 	flags: number;
 	enchantments: string;
 	randomPropertyId: number;
+	classId: number;
+	subclassId: number;
 }
 
 interface ICustomizationOption {
@@ -338,7 +340,16 @@ export class CharacterController {
 			values: [charGuid],
 			timeout: this.armory.config.dbQueryTimeout,
 		});
-		return rows as RowDataPacket[] as IEquipmentData[];
+
+		const data = rows as RowDataPacket[] as IEquipmentData[];
+
+		for (const row of data) {
+			const item = await this.armory.dbc.item().find(item => item.id === row.itemEntry);
+			row.classId = item.classId;
+			row.subclassId = item.subclassId;
+		}
+
+		return data;
 	}
 
 	private async getMounts(realm: string, charGuid: number): Promise<IMount[]> {
