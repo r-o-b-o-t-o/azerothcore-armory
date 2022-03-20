@@ -28,6 +28,7 @@ export interface IAchievementCategory {
 export interface IItemDbc {
 	id: number;
 	classId: number;
+	subclassId: number;
 	displayInfoId: number;
 	inventoryType: number;
 }
@@ -316,7 +317,7 @@ const dbcFields = {
 	achievement: ["id", "faction", "titleLang0", "descriptionLang0", "category", "points", "flags", "iconId"],
 	achievementCategory: ["id", "parent", "nameLang0"],
 	glyphProperties: ["id", "spellId"],
-	item: ["id", "classId", "displayInfoId", "inventoryType"],
+	item: ["id", "classId", "subclassId", "displayInfoId", "inventoryType"],
 	itemRetail: ["id", "inventoryType"],
 	itemAppearance: ["id", "itemDisplayInfoId"],
 	itemModifiedAppearance: ["id", "itemId", "itemAppearanceId"],
