@@ -115,7 +115,7 @@ export class Config {
       } else if (typeof model === 'object') {
         const obj = {};
         Config.loadObjFromEnv(logger, obj, model, parentName + i);
-        if (Object.keys(obj).length > 0) {
+        if (Object.keys(obj).length) {
           arr.push(obj);
         }
       } else if (process.env.hasOwnProperty(key)) {
@@ -161,7 +161,7 @@ export class Config {
     for (const field of missing) {
       logger.warn(`Field ${parentName}${field} is missing from config.json!`);
     }
-    for (const key in model) {
+    for (const key of Object.keys(model)) {
       if (typeof model[key] === 'object' && obj.hasOwnProperty(key)) {
         Config.checkAllMissingFields(logger, obj[key], model[key], parentName + key);
       }
@@ -169,12 +169,8 @@ export class Config {
   }
 
   private static hasMissingFields(obj: object, model: object): string[] {
-    const missing = [];
-    for (const key in model) {
-      if (!obj.hasOwnProperty(key)) {
-        missing.push(key);
-      }
-    }
-    return missing;
+    const objProp = Object.keys(obj);
+    const missingPropertiesInObj = Object.keys(model).filter((key) => !objProp.includes(key));
+    return missingPropertiesInObj;
   }
 }

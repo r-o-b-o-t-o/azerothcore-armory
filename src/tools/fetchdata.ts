@@ -125,21 +125,17 @@ async function download(dir: string, file: string): Promise<string | any> {
 
 function queueTexturesAndModels(item: any): void {
   if (item.TextureFiles !== null) {
-    for (const key in item.TextureFiles) {
-      for (const file of item.TextureFiles[key]) {
-        if (file.FileDataId !== 0) {
-          texturesDownloadQueue.add(file.FileDataId);
-        }
+    for (const file in Object.values(item.TextureFiles)) {
+      if (file['FileDataId'] !== 0) {
+        texturesDownloadQueue.add(file['FileDataId']);
       }
     }
   }
 
   if (item.ModelFiles !== null) {
-    for (const key in item.ModelFiles) {
-      for (const file of item.ModelFiles[key]) {
-        if (file.FileDataId !== 0) {
-          modelsDownloadQueue.add(file.FileDataId);
-        }
+    for (const file of Object.values(item.ModelFiles)) {
+      if (file['FileDataId'] !== 0) {
+        modelsDownloadQueue.add(file['FileDataId']);
       }
     }
   }
@@ -149,7 +145,7 @@ function queueTexturesAndModels(item: any): void {
   }
 
   if (item.Textures !== null) {
-    for (const key in item.Textures) {
+    for (const key of Object.keys(item.Textures)) {
       if (item.Textures[key] !== 0) {
         texturesDownloadQueue.add(item.Textures[key]);
       }
@@ -157,7 +153,7 @@ function queueTexturesAndModels(item: any): void {
   }
 
   if (item.Textures2 !== null) {
-    for (const key in item.Textures2) {
+    for (const key of Object.keys(item.Textures2)) {
       if (item.Textures2[key] !== 0) {
         texturesDownloadQueue.add(item.Textures2[key]);
       }
@@ -196,11 +192,9 @@ async function downloadRaces(): Promise<void> {
         }
       }
 
-      const textureFiles = Object.keys(customizationJson.TextureFiles)
-        .map((key) => customizationJson.TextureFiles[key])
-        .flat();
+      const textureFiles = Object.values(customizationJson.TextureFiles).flat();
       for (const file of textureFiles) {
-        texturesDownloadQueue.add(file.FileDataId);
+        texturesDownloadQueue.add(file['FileDataId']);
       }
 
       progress.increment();

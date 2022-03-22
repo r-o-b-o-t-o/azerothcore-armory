@@ -1,34 +1,34 @@
 {
-	"aowowUrl": "https://wotlkdb.com",
-	"websiteUrl": "https://mywebsite.com",
-	"websiteName": "My Website",
-	"websiteRoot": "",
-	"iframeMode": {
-		"enabled": false,
-		"url": "https://mywebsite.com/armory"
-	},
-	"loadDbcs": true,
-	"hideGameMasters": true,
-	"realms": [
-		{
-			"name": "AzerothCore",
-			"realmId": 1,
-			"authDatabase": "acore_auth",
-			"charactersDatabase": {
-				"host": "localhost",
-				"port": 3306,
-				"user": "acore",
-				"password": "acore",
-				"database": "acore_characters"
-			}
-		}
-	],
-	"worldDatabase": {
-		"host": "localhost",
-		"port": 3306,
-		"user": "acore",
-		"password": "acore",
-		"database": "acore_world"
-	},
-	"dbQueryTimeout": 10000
+  "aowowUrl": "https://wotlkdb.com",
+  "websiteUrl": "https://mywebsite.com",
+  "websiteName": "My Website",
+  "websiteRoot": "",
+  "iframeMode": {
+    "enabled": false,
+    "url": "https://mywebsite.com/armory"
+  },
+  "loadDbcs": true,
+  "hideGameMasters": true,
+  "realms": [
+    {
+      "name": "AzerothCore",
+      "realmId": 1,
+      "authDatabase": "acore_auth",
+      "charactersDatabase": {
+        "host": "localhost",
+        "port": 3306,
+        "user": "acore",
+        "password": "acore",
+        "database": "acore_characters"
+      }
+    }
+  ],
+  "worldDatabase": {
+    "host": "localhost",
+    "port": 3306,
+    "user": "acore",
+    "password": "acore",
+    "database": "acore_world"
+  },
+  "dbQueryTimeout": 10000
 }
