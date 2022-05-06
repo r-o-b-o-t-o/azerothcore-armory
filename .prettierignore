@@ -5,7 +5,7 @@
 .nvmrc
 node_modules/
 .env*
-data/
+# data/
 build/
 build-tools/
 logs/
