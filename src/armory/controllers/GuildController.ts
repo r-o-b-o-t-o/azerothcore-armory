@@ -64,13 +64,11 @@ export class GuildController {
 			{ name: "name", table: "characters", collation: `${charSet}_general_ci` },
 			{ name: "rank" },
 			{ name: "level", table: "characters" },
-			{ name: "class", table: "characters", formatter: cls => Utils.classNames[cls] },
+			{ name: "class", table: "characters", formatter: (cls) => Utils.classNames[cls] },
 			{ name: "race", table: "characters", formatter: (race, row) => `${Utils.raceNames[race]}_${row[6] === 0 ? "male" : "female"}` },
-			{ name: "online", table: "characters", formatter: online => online === 1 },
+			{ name: "online", table: "characters", formatter: (online) => online === 1 },
 		]);
-		ssp.joins = [
-			{ table1: "guild_member", column1: "guid", table2: "characters", column2: "guid", kind: "LEFT" },
-		];
+		ssp.joins = [{ table1: "guild_member", column1: "guid", table2: "characters", column2: "guid", kind: "LEFT" }];
 		ssp.extraDataColumns = ["`characters`.`gender`"];
 
 		if (this.armory.config.hideGameMasters) {
@@ -86,10 +84,7 @@ export class GuildController {
 			ssp = ssp.where("`account_access`.`id` IS NULL");
 		}
 
-		const result = await ssp
-			.where("`guildid` = ?", guildId)
-			.where("`deleteInfos_Account` IS NULL")
-			.run(this.armory.config.dbQueryTimeout);
+		const result = await ssp.where("`guildid` = ?", guildId).where("`deleteInfos_Account` IS NULL").run(this.armory.config.dbQueryTimeout);
 
 		const ranks = await this.getGuildRanks(realm, guildId);
 		(result as any).ranks = {};

@@ -54,9 +54,12 @@ class Progress {
 	}
 
 	private createProgressBar(text: string, total: number): cliProgress.SingleBar {
-		const progress = new cliProgress.SingleBar({
-			format: `${text} {bar} {percentage}% ({value} / {total})`,
-		}, cliProgress.Presets.shades_classic);
+		const progress = new cliProgress.SingleBar(
+			{
+				format: `${text} {bar} {percentage}% ({value} / {total})`,
+			},
+			cliProgress.Presets.shades_classic,
+		);
 		progress.start(total, 0);
 		return progress;
 	}
@@ -122,21 +125,17 @@ async function download(dir: string, file: string): Promise<string | any> {
 
 function queueTexturesAndModels(item: any): void {
 	if (item.TextureFiles !== null) {
-		for (const key in item.TextureFiles) {
-			for (const file of item.TextureFiles[key]) {
-				if (file.FileDataId !== 0) {
-					texturesDownloadQueue.add(file.FileDataId);
-				}
+		for (const file in Object.values(item.TextureFiles)) {
+			if (file["FileDataId"] !== 0) {
+				texturesDownloadQueue.add(file["FileDataId"]);
 			}
 		}
 	}
 
 	if (item.ModelFiles !== null) {
-		for (const key in item.ModelFiles) {
-			for (const file of item.ModelFiles[key]) {
-				if (file.FileDataId !== 0) {
-					modelsDownloadQueue.add(file.FileDataId);
-				}
+		for (const file of Object.values(item.ModelFiles)) {
+			if (file["FileDataId"] !== 0) {
+				modelsDownloadQueue.add(file["FileDataId"]);
 			}
 		}
 	}
@@ -146,7 +145,7 @@ function queueTexturesAndModels(item: any): void {
 	}
 
 	if (item.Textures !== null) {
-		for (const key in item.Textures) {
+		for (const key of Object.keys(item.Textures)) {
 			if (item.Textures[key] !== 0) {
 				texturesDownloadQueue.add(item.Textures[key]);
 			}
@@ -154,7 +153,7 @@ function queueTexturesAndModels(item: any): void {
 	}
 
 	if (item.Textures2 !== null) {
-		for (const key in item.Textures2) {
+		for (const key of Object.keys(item.Textures2)) {
 			if (item.Textures2[key] !== 0) {
 				texturesDownloadQueue.add(item.Textures2[key]);
 			}
@@ -163,25 +162,13 @@ function queueTexturesAndModels(item: any): void {
 }
 
 async function downloadRaces(): Promise<void> {
-	const races = [
-		"human",
-		"nightelf",
-		"dwarf",
-		"gnome",
-		"draenei",
-		"orc",
-		"troll",
-		"tauren",
-		"bloodelf",
-		"scourge",
-	];
+	const races = ["human", "nightelf", "dwarf", "gnome", "draenei", "orc", "troll", "tauren", "bloodelf", "scourge"];
 	const genders = ["male", "female"];
 	const raceGenderCombo = races.map((race) => [race + genders[0], race + genders[1]]).flat();
 
 	const progress = new Progress("Downloading races data...", raceGenderCombo.length);
 
-	await promisepool.PromisePool
-		.for(raceGenderCombo)
+	await promisepool.PromisePool.for(raceGenderCombo)
 		.withConcurrency(4)
 		.process(async (race) => {
 			const characterJson = await download("meta/character", `${race}.json`);
@@ -191,7 +178,11 @@ async function downloadRaces(): Promise<void> {
 			for (const option of customizationJson.Options) {
 				for (const choice of option.Choices) {
 					for (const element of choice.Elements) {
-						if (element.SkinnedModel !== null && typeof element.SkinnedModel.CollectionFileDataID === "number" && element.SkinnedModel.CollectionFileDataID !== 0) {
+						if (
+							element.SkinnedModel !== null &&
+							typeof element.SkinnedModel.CollectionFileDataID === "number" &&
+							element.SkinnedModel.CollectionFileDataID !== 0
+						) {
 							modelsDownloadQueue.add(element.SkinnedModel.CollectionFileDataID);
 						}
 						if (element.BoneSet !== null && typeof element.BoneSet.BoneFileDataID === "number" && element.BoneSet.BoneFileDataID !== 0) {
@@ -201,11 +192,9 @@ async function downloadRaces(): Promise<void> {
 				}
 			}
 
-			const textureFiles = Object.keys(customizationJson.TextureFiles)
-				.map(key => customizationJson.TextureFiles[key])
-				.flat();
+			const textureFiles = Object.values(customizationJson.TextureFiles).flat();
 			for (const file of textureFiles) {
-				texturesDownloadQueue.add(file.FileDataId);
+				texturesDownloadQueue.add(file["FileDataId"]);
 			}
 
 			progress.increment();
@@ -215,12 +204,14 @@ async function downloadRaces(): Promise<void> {
 }
 
 async function downloadArmors(): Promise<void> {
-	const rows = await dbc.item().filter((row) => row.classId === classIdArmor).toArray();
+	const rows = await dbc
+		.item()
+		.filter((row) => row.classId === classIdArmor)
+		.toArray();
 
 	const progress = new Progress("Downloading armor data...", rows.length);
 
-	await promisepool.PromisePool
-		.for(rows)
+	await promisepool.PromisePool.for(rows)
 		.withConcurrency(50)
 		.process(async (row) => {
 			const modifiedAppearance = dbcItemModifiedAppearanceByItemId[row.id];
@@ -247,12 +238,14 @@ async function downloadArmors(): Promise<void> {
 }
 
 async function downloadWeapons(): Promise<void> {
-	const rows = await dbc.item().filter((row) => row.classId === classIdWeapon).toArray();
+	const rows = await dbc
+		.item()
+		.filter((row) => row.classId === classIdWeapon)
+		.toArray();
 
 	const progress = new Progress("Downloading weapon data...", rows.length);
 
-	await promisepool.PromisePool
-		.for(rows)
+	await promisepool.PromisePool.for(rows)
 		.withConcurrency(50)
 		.process(async (row) => {
 			const modifiedAppearance = dbcItemModifiedAppearanceByItemId[row.id];
@@ -307,11 +300,13 @@ async function readDbcData(): Promise<void> {
 }
 
 async function downloadMounts(): Promise<void> {
-	const mountSpells = await dbc.spell().filter(spell => spell.mechanic === spellMechanicMounted).toArray();
+	const mountSpells = await dbc
+		.spell()
+		.filter((spell) => spell.mechanic === spellMechanicMounted)
+		.toArray();
 	const progress = new Progress("Downloading mount data...", mountSpells.length);
 
-	await promisepool.PromisePool
-		.for(mountSpells)
+	await promisepool.PromisePool.for(mountSpells)
 		.withConcurrency(50)
 		.process(async (spell) => {
 			const mount = dbcMountBySourceSpellId[spell.id];
@@ -333,8 +328,7 @@ async function downloadMounts(): Promise<void> {
 async function downloadTextures(): Promise<void> {
 	const progress = new Progress("Downloading textures...", texturesDownloadQueue.size);
 
-	await promisepool.PromisePool
-		.for(Array.from(texturesDownloadQueue))
+	await promisepool.PromisePool.for(Array.from(texturesDownloadQueue))
 		.withConcurrency(25)
 		.process(async (fileDataId) => {
 			await download("textures", `${fileDataId}.png`);
@@ -347,8 +341,7 @@ async function downloadTextures(): Promise<void> {
 async function downloadModels(): Promise<void> {
 	const progress = new Progress("Downloading models...", modelsDownloadQueue.size);
 
-	await promisepool.PromisePool
-		.for(Array.from(modelsDownloadQueue))
+	await promisepool.PromisePool.for(Array.from(modelsDownloadQueue))
 		.withConcurrency(25)
 		.process(async (fileDataId) => {
 			await download("mo3", `${fileDataId}.mo3`);
@@ -361,8 +354,7 @@ async function downloadModels(): Promise<void> {
 async function downloadBones(): Promise<void> {
 	const progress = new Progress("Downloading bones...", bonesDownloadQueue.size);
 
-	await promisepool.PromisePool
-		.for(Array.from(bonesDownloadQueue))
+	await promisepool.PromisePool.for(Array.from(bonesDownloadQueue))
 		.withConcurrency(25)
 		.process(async (fileDataId) => {
 			try {
@@ -384,8 +376,7 @@ async function parseModels(): Promise<void> {
 	const files = await glob("data/mo3/*.mo3");
 	const progress = new Progress("Reading model files for texture references...", files.length);
 
-	await promisepool.PromisePool
-		.for(files)
+	await promisepool.PromisePool.for(files)
 		.withConcurrency(20)
 		.process(async (file) => {
 			const buffer = await fsp.readFile(file);
