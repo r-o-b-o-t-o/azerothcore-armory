@@ -16,8 +16,16 @@
 <span data-icon-size="large" class="icon-size is-hidden-mobile"></span>
 <span data-icon-size="medium" class="icon-size is-hidden-tablet"></span>
 
-<br>
-<div id="char-options" class="columns">
+<div class="columns">
+	<div class="column">
+		<label class="checkbox">
+			<input id="cb-enable-3d-viewer" type="checkbox">
+			Enable 3D viewer
+		</label>
+	</div>
+</div>
+
+<div id="3d-viewer-options" class="columns">
 	<div class="column is-one-quarter">
 		<label class="checkbox">
 			<input id="cb-hide-helmet" type="checkbox">
@@ -81,6 +89,25 @@
 	};
 	const genders = ["male", "female"];
 
+	if (Cookies.get("disable-3d-viewer") === "1") {
+		$("#3d-viewer-options").hide();
+	} else {
+		$("#cb-enable-3d-viewer").prop("checked", true);
+	}
+	$("#cb-enable-3d-viewer").change(() => {
+		const enabled = $("#cb-enable-3d-viewer").prop("checked");
+
+		if (enabled) {
+			Cookies.remove("disable-3d-viewer");
+			createViewer();
+			$("#3d-viewer-options").slideDown("fast");
+		} else {
+			Cookies.set("disable-3d-viewer", "1");
+			viewer?.destroy();
+			$("#3d-viewer-options").slideUp("fast");
+		}
+	});
+
 	const hideHelm = (charData.flags & 0x0400) === 0x0400;
 	$("#cb-hide-helmet").prop("checked", hideHelm);
 	const hideCloak = (charData.flags & 0x0800) === 0x0800;
@@ -101,6 +128,10 @@
 
 	let viewer;
 	function createViewer() {
+		if (Cookies.get("disable-3d-viewer") === "1") {
+			return;
+		}
+
 		viewer?.destroy();
 		viewer = new ZamModelViewer(characterModel);
 	}
