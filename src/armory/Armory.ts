@@ -85,10 +85,8 @@ export class Armory {
 			websiteRoot: this.config.websiteRoot,
 			iframeMode: this.config.iframeMode,
 		};
-		for (const key in locals) {
-			if (locals.hasOwnProperty(key)) {
-				app.locals[key] = locals[key];
-			}
+		for (const key of Object.keys(locals)) {
+			app.locals[key] = locals[key];
 		}
 		app.locals.locals = locals;
 
