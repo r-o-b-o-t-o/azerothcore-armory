@@ -47,7 +47,8 @@ export class IndexController {
 				table1: "characters",
 				column1: "account",
 				table2: "account_access",
-				column2: "id", database2: realm.authDatabase,
+				column2: "id",
+				database2: realm.authDatabase,
 				kind: "LEFT",
 				where: `AND \`account_access\`.\`RealmID\` IN (-1, ${realm.realmId}) AND \`account_access\`.\`gmlevel\` > 0`,
 			});
