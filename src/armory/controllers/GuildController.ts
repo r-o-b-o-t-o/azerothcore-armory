@@ -79,10 +79,9 @@ export class GuildController {
 				column2: "id",
 				database2: realm.authDatabase,
 				kind: "LEFT",
+				where: `AND \`account_access\`.\`RealmID\` IN (-1, ${realm.realmId}) AND \`account_access\`.\`gmlevel\` > 0`,
 			});
-			ssp = ssp.where(
-				`\`account_access\`.\`id\` IS NULL OR \`account_access\`.\`RealmID\` NOT IN (-1, ${realm.realmId}) OR \`account_access\`.\`gmlevel\` = 0`,
-			);
+			ssp = ssp.where("`account_access`.`id` IS NULL");
 		}
 
 		const result = await ssp.where("`guildid` = ?", guildId).where("`deleteInfos_Account` IS NULL").run(this.armory.config.dbQueryTimeout);
