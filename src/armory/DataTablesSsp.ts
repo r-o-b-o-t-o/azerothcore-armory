@@ -23,6 +23,7 @@ export interface IColumnJoin {
 	column2: string;
 	database2?: string;
 	kind: "INNER" | "FULL OUTER" | "LEFT" | "RIGHT";
+	where?: string;
 }
 
 export class DataTablesSsp {
@@ -38,22 +39,22 @@ export class DataTablesSsp {
 	private start: number;
 	private length: number;
 	private _order: {
-		column: number,
-		dir: string,
+		column: number;
+		dir: string;
 	}[];
 	private columns: {
-		data: number,
-		name: string,
-		searchable: boolean,
-		orderable: boolean,
+		data: number;
+		name: string;
+		searchable: boolean;
+		orderable: boolean;
 		search: {
-			value: string,
-			regex: boolean,
-		}
+			value: string;
+			regex: boolean;
+		};
 	}[];
 	private search: {
-		value: string,
-		regex: boolean,
+		value: string;
+		regex: boolean;
 	};
 
 	private wheres: string[] = [];
@@ -69,18 +70,18 @@ export class DataTablesSsp {
 		this.start = parseInt(query.start as string, 10);
 		this.length = parseInt(query.length as string, 10);
 		this.draw = parseInt(query.draw as string, 10);
-		this._order = (query.order as { column: string, dir: string }[])
-			.map(order => { return { column: parseInt(order.column, 10), dir: order.dir, }; });
-		this.columns = (query.columns as { data: string, name: string, searchable: string, orderable: string, search: any }[])
-			.map(column => {
-				return {
-					data: parseInt(column.data, 10),
-					name: column.name,
-					searchable: column.searchable === "true",
-					orderable: column.orderable === "true",
-					search: { value: column.search.value, regex: column.search.regex === "true" },
-				};
-			});
+		this._order = (query.order as { column: string; dir: string }[]).map((order) => {
+			return { column: parseInt(order.column, 10), dir: order.dir };
+		});
+		this.columns = (query.columns as { data: string; name: string; searchable: string; orderable: string; search: any }[]).map((column) => {
+			return {
+				data: parseInt(column.data, 10),
+				name: column.name,
+				searchable: column.searchable === "true",
+				orderable: column.orderable === "true",
+				search: { value: column.search.value, regex: column.search.regex === "true" },
+			};
+		});
 		this.search = {
 			value: (query.search as any).value as string,
 			regex: (query.search as any).regex === "true",
@@ -93,7 +94,7 @@ export class DataTablesSsp {
 	}
 
 	private colSettingsToStr(colSettings: IColumnSettings) {
-		const db = colSettings.database ? ("`" + colSettings.database + "`.") : "";
+		const db = colSettings.database ? "`" + colSettings.database + "`." : "";
 		return `${db}\`${colSettings.table || this.table}\`.\`${colSettings.name}\``;
 	}
 
@@ -130,8 +131,9 @@ export class DataTablesSsp {
 
 	private join() {
 		for (const join of this.joins) {
-			const db2 = join.database2 ? "`" + join.database2 + "`." : "";
-			this.joinSql += `${join.kind} JOIN ${db2}\`${join.table2}\` ON ${db2}\`${join.table2}\`.\`${join.column2}\` = \`${join.table1}\`.\`${join.column1}\`\n`;
+			const db2 = join.database2 ? `\`${join.database2}\`.` : "";
+			const where = join.where ? ` ${join.where}` : "";
+			this.joinSql += `${join.kind} JOIN ${db2}\`${join.table2}\` ON ${db2}\`${join.table2}\`.\`${join.column2}\` = \`${join.table1}\`.\`${join.column1}\`${where}\n`;
 		}
 
 		return this;
@@ -153,19 +155,16 @@ export class DataTablesSsp {
 				this.filterBindings.push(`%${this.search.value}%`);
 			}
 			if (filterWheres.length > 0) {
-				this.filterWhereSql = "(" + filterWheres.map(w => `(${w})`).join(" OR ") + ")";
+				this.filterWhereSql = "(" + filterWheres.map((w) => `(${w})`).join(" OR ") + ")";
 			}
 		}
 
-		this.customWhereSql = this.wheres.map(w => `(${w})`).join(" AND ");
+		this.customWhereSql = this.wheres.map((w) => `(${w})`).join(" AND ");
 		return this;
 	}
 
 	public sql(): string {
-		const columns = [
-			...this.columnSettings.map(c => this.colSettingsToStr(c)),
-			...this.extraDataColumns,
-		];
+		const columns = [...this.columnSettings.map((c) => this.colSettingsToStr(c)), ...this.extraDataColumns];
 		return `
 			SELECT ${columns.join(", ")}
 			FROM ${this.table}
@@ -199,10 +198,7 @@ export class DataTablesSsp {
 	}
 
 	public async run(queryTimeout: number = 10_000): Promise<IResult> {
-		this.limit()
-			.order()
-			.join()
-			.filter();
+		this.limit().order().join().filter();
 
 		const bindings = [...this.filterBindings, ...this.customBindings];
 
@@ -226,7 +222,7 @@ export class DataTablesSsp {
 			values: bindings,
 			timeout: queryTimeout,
 		});
-		rows = (rows as any[][]).map(row => {
+		rows = (rows as any[][]).map((row) => {
 			for (let i = 0; i < this.columnSettings.length; ++i) {
 				const col = this.columnSettings[i];
 				if (col.formatter !== undefined) {

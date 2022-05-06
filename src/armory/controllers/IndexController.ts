@@ -14,15 +14,13 @@ export class IndexController {
 	public async index(req: express.Request, res: express.Response): Promise<void> {
 		res.render("index.hbs", {
 			title: "Armory",
-			realms: this.armory.config.realms.map(r => r.name),
+			realms: this.armory.config.realms.map((r) => r.name),
 		});
 	}
 
 	public async search(req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> {
 		const realmName = req.query.realm as string;
-		const realm = realmName === undefined ?
-			this.armory.config.realms[0] :
-			this.armory.config.realms.find(r => r.name === realmName);
+		const realm = realmName === undefined ? this.armory.config.realms[0] : this.armory.config.realms.find((r) => r.name === realmName);
 		if (realm === undefined) {
 			return next(400);
 		}
@@ -34,9 +32,9 @@ export class IndexController {
 			{ name: "name", collation: `${charSet}_general_ci` },
 			{ table: "guild", name: "name" },
 			{ name: "level" },
-			{ name: "class", formatter: cls => Utils.classNames[cls] },
+			{ name: "class", formatter: (cls) => Utils.classNames[cls] },
 			{ name: "race", formatter: (race, row) => `${Utils.raceNames[race]}_${row[6] === 0 ? "male" : "female"}` },
-			{ name: "online", formatter: online => online === 1 },
+			{ name: "online", formatter: (online) => online === 1 },
 		]);
 		ssp.joins = [
 			{ table1: "characters", column1: "guid", table2: "guild_member", column2: "guid", kind: "LEFT" },
@@ -45,13 +43,19 @@ export class IndexController {
 		ssp.extraDataColumns = ["`characters`.`gender`"];
 
 		if (this.armory.config.hideGameMasters) {
-			ssp.joins.push({ table1: "characters", column1: "account", table2: "account_access", column2: "id", database2: realm.authDatabase, kind: "LEFT" });
-			ssp = ssp.where(`\`account_access\`.\`id\` IS NULL OR \`account_access\`.\`RealmID\` NOT IN (-1, ${realm.realmId}) OR \`account_access\`.\`gmlevel\` = 0`);
+			ssp.joins.push({
+				table1: "characters",
+				column1: "account",
+				table2: "account_access",
+				column2: "id",
+				database2: realm.authDatabase,
+				kind: "LEFT",
+				where: `AND \`account_access\`.\`RealmID\` IN (-1, ${realm.realmId}) AND \`account_access\`.\`gmlevel\` > 0`,
+			});
+			ssp = ssp.where("`account_access`.`id` IS NULL");
 		}
 
-		const result = await ssp
-			.where("`deleteInfos_Account` IS NULL")
-			.run(this.armory.config.dbQueryTimeout);
+		const result = await ssp.where("`deleteInfos_Account` IS NULL").run(this.armory.config.dbQueryTimeout);
 		(result as any).realm = realm.name;
 
 		res.json(result);
