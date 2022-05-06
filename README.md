@@ -110,14 +110,14 @@ I also noticed that such a tool was frequently requested in the AzerothCore Disc
 		```sh
 		git clone git@github.com:r-o-b-o-t-o/azerothcore-armory.git
 		```
-3. Install the dependencies:
+2. Install the dependencies:
 	```sh
 	cd azerothcore-armory/
 	npm install
 	```
-4. Configure the application: copy `config.default.json` to `config.json` or `.env.example` to `.env` and edit the resulting file.  
+3. Configure the application: copy `config.default.json` to `config.json` or `.env.example` to `.env` and edit the resulting file.  
 	See the [Configuration Reference](#configuration-reference) below for a description of all values.
-5. Download the model viewer's data:
+4. Download the model viewer's data:
 	* Download from script:
 		```sh
 		npm run build
