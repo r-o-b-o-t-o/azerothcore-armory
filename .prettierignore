@@ -14,5 +14,8 @@ coverage/
 dist/
 **/*.md
 **/*.yml
-package.json
 package-lock.json
+static/**/*.min.js
+static/**/*.min.css
+static/**/*.hbs
+config.json
