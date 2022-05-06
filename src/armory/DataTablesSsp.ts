@@ -23,6 +23,7 @@ export interface IColumnJoin {
 	column2: string;
 	database2?: string;
 	kind: "INNER" | "FULL OUTER" | "LEFT" | "RIGHT";
+	where?: string;
 }
 
 export class DataTablesSsp {
@@ -130,8 +131,9 @@ export class DataTablesSsp {
 
 	private join() {
 		for (const join of this.joins) {
-			const db2 = join.database2 ? "`" + join.database2 + "`." : "";
-			this.joinSql += `${join.kind} JOIN ${db2}\`${join.table2}\` ON ${db2}\`${join.table2}\`.\`${join.column2}\` = \`${join.table1}\`.\`${join.column1}\`\n`;
+			const db2 = join.database2 ? `\`${join.database2}\`.` : "";
+			const where = join.where ? ` ${join.where}` : "";
+			this.joinSql += `${join.kind} JOIN ${db2}\`${join.table2}\` ON ${db2}\`${join.table2}\`.\`${join.column2}\` = \`${join.table1}\`.\`${join.column1}\`${where}\n`;
 		}
 
 		return this;

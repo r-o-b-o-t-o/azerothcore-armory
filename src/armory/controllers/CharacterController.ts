@@ -314,10 +314,10 @@ export class CharacterController {
 				FROM \`characters\`
 				LEFT JOIN \`guild_member\` ON \`guild_member\`.\`guid\` = \`characters\`.\`guid\`
 				LEFT JOIN \`guild\` ON \`guild\`.\`guildid\` = \`guild_member\`.\`guildid\`
-				LEFT JOIN \`${realm.authDatabase}\`.\`account_access\` ON \`account_access\`.\`id\` = \`characters\`.\`account\`
+				LEFT JOIN \`${realm.authDatabase}\`.\`account_access\` ON \`account_access\`.\`id\` = \`characters\`.\`account\` AND \`account_access\`.\`RealmID\` IN (-1, ${realm.realmId}) AND \`account_access\`.\`gmlevel\` > 0
 				WHERE
 					${where}
-					AND (\`account_access\`.\`id\` IS NULL OR \`account_access\`.\`RealmID\` NOT IN (-1, ${realm.realmId}) OR \`account_access\`.\`gmlevel\` = 0 OR ? = 0)
+					AND (\`account_access\`.\`id\` IS NULL OR ? = 0)
 			`,
 			values: [character, this.armory.config.hideGameMasters ? 1 : 0],
 			timeout: this.armory.config.dbQueryTimeout,
