@@ -8,6 +8,7 @@
 		"start": "node --expose-gc build/armory/main.js",
 		"watch": "concurrently \"tsc -w --project .\" \"npm run nodemon\"",
 		"nodemon": "nodemon -q -w build -w config.json build/armory/main.js",
+		"prettier": "prettier . -w",
 		"fetchdata": "node build/tools/fetchdata.js",
 		"cleardata": "rimraf data/bone data/meta data/mo3 data/textures"
 	},
