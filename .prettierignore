@@ -4,6 +4,8 @@
 .npmrc
 .nvmrc
 node_modules/
+.env*
+data/
 build/
 build-tools/
 logs/
