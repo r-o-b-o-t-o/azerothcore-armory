@@ -134,10 +134,11 @@
 		characterModel.items.push(...items);
 	}
 
-	function createItemSlot(item, invSlot, icon, rel, container) {
+	function createItemSlot(item, invSlot, icon, quality, rel, container) {
 		const $item = $itemSlotTemplate.clone();
 		$item
 			.data("icon", icon)
+			.data("quality", quality)
 			.find(".inventory-slot")
 			.css("background-image", `url("{{websiteRoot}}/img/inventory-slot/${invSlot}.png")`);
 		if (item !== undefined) {
@@ -168,7 +169,7 @@
 					rel.push("rand=" + item.randomPropertyId);
 				}
 			}
-			createItemSlot(item?.itemEntry, slot, item?.icon?.toLowerCase(), rel.join("&"), side.element);
+			createItemSlot(item?.itemEntry, slot, item?.icon?.toLowerCase(), item?.quality, rel.join("&"), side.element);
 		}
 	}
 	const nbItemRows = Math.max($("#equipment-col-left").children().length, $("#equipment-col-right").children().length);
@@ -186,8 +187,12 @@
 				const $item = $(el);
 				const item = $item.data("item");
 				const icon = $item.data("icon");
+				const quality = $item.data("quality");
 				if (item !== undefined) {
 					$item.find(".icon").css("background-image", `url("{{aowow}}/static/images/wow/icons/${iconSize}/${icon}.jpg")`);
+				}
+				if (quality !== undefined) {
+					$item.find(".border").css("background-image", `url("{{aowow}}/static/images/Icon/${iconSize}/border/q${quality}.png")`);
 				}
 			});
 
