@@ -105,7 +105,7 @@ export class Config {
 		let i = 0;
 		while (true) {
 			const key = Config.getEnvKey(parentName + i);
-			const found = Object.keys(process.env).some(k => k.startsWith(key));
+			const found = Object.keys(process.env).some((k) => k.startsWith(key));
 			if (!found) {
 				break;
 			}
@@ -131,10 +131,14 @@ export class Config {
 	}
 
 	private static getEnvKey(key: string): string {
-		return Config.envPrefix + "_" + key
-			.replace(/\./g, "__")
-			.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`)
-			.toUpperCase();
+		return (
+			Config.envPrefix +
+			"_" +
+			key
+				.replace(/\./g, "__")
+				.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`)
+				.toUpperCase()
+		);
 	}
 
 	private static parseEnvValue(value: string, model: any): any {
@@ -173,4 +177,4 @@ export class Config {
 		}
 		return missing;
 	}
-};
+}

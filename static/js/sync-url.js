@@ -1,3 +1,6 @@
-window.parent.postMessage({
-	url: window.location.pathname.replace(handlebarsData.websiteRoot, ""),
-}, "*");
+window.parent.postMessage(
+	{
+		url: window.location.pathname.replace(handlebarsData.websiteRoot, ""),
+	},
+	"*",
+);
