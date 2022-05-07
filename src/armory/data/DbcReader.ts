@@ -148,11 +148,13 @@ class AsyncGenWrapper<T> implements IAsyncGeneratorWithArrayMethods<T> {
 	}
 
 	public static from<T>(array: T[]): AsyncGenWrapper<T> {
-		return new AsyncGenWrapper<T>(async function* () {
-			for (const x of array) {
-				yield x;
-			}
-		}());
+		return new AsyncGenWrapper<T>(
+			(async function* () {
+				for (const x of array) {
+					yield x;
+				}
+			})(),
+		);
 	}
 
 	public async *[Symbol.asyncIterator](): AsyncGenerator<T> {
@@ -217,11 +219,10 @@ class DbcReader<T> {
 			return;
 		}
 
-		const headerCols = headerLine.value
-			.map(header => camelCase(header).replace(/[\[\]]/g, ""));
+		const headerCols = headerLine.value.map((header) => camelCase(header).replace(/[\[\]]/g, ""));
 
 		for await (const arr of itr) {
-			const cols = arr.map(value => isNaN(value as any) ? value : parseInt(value, 10));
+			const cols = arr.map((value) => (isNaN(value as any) ? value : parseInt(value, 10)));
 			const row = {};
 			headerCols.forEach((header, headerIdx) => {
 				if (this.fields.length === 0 || this.fields.includes(header)) {
@@ -242,7 +243,8 @@ class DbcReader<T> {
 			const str = chunk.toString();
 			// Iterate over each character, keep track of current column (of the returned array)
 			for (let c = 0; c < str.length; ++c) {
-				let ch = str[c], nch = str[c + 1]; // Current character, next character
+				let ch = str[c],
+					nch = str[c + 1]; // Current character, next character
 				if (!(col in arr)) {
 					arr[col] = ""; // Create a new column (start with empty string) if necessary
 				}
@@ -263,14 +265,14 @@ class DbcReader<T> {
 				}
 
 				// If it's a comma and we're not in a quoted field, move on to the next column
-				if (ch == ',' && !quote) {
+				if (ch == "," && !quote) {
 					++col;
 					continue;
 				}
 
 				// If it's a newline (CRLF) and we're not in a quoted field, skip the next character
 				// and move on to the next row and move to column 0 of that new row
-				if (ch == '\r' && nch == '\n' && !quote) {
+				if (ch == "\r" && nch == "\n" && !quote) {
 					yield arr;
 					arr.length = 0; // Clear the row
 					col = 0;
@@ -280,7 +282,7 @@ class DbcReader<T> {
 
 				// If it's a newline (LF or CR) and we're not in a quoted field,
 				// move on to the next row and move to column 0 of that new row
-				if (!quote && (ch == '\r' || ch == '\n')) {
+				if (!quote && (ch == "\r" || ch == "\n")) {
 					yield arr;
 					arr.length = 0; // Clear the row
 					col = 0;
@@ -327,7 +329,19 @@ const dbcFields = {
 	spell: ["id", "mechanic", "spellIconId"],
 	spellItemEnchantment: ["id", "srcItemId"],
 	spellIcon: ["id", "textureFilename"],
-	talent: ["id", "tabId", "tierId", "columnIndex", "spellRank0", "spellRank1", "spellRank2", "spellRank3", "spellRank4", "prereqTalent0", "prereqRank0"],
+	talent: [
+		"id",
+		"tabId",
+		"tierId",
+		"columnIndex",
+		"spellRank0",
+		"spellRank1",
+		"spellRank2",
+		"spellRank3",
+		"spellRank4",
+		"prereqTalent0",
+		"prereqRank0",
+	],
 	talentTab: ["id", "nameLang0", "spellIconId", "classMask"],
 };
 
@@ -350,17 +364,26 @@ export class DbcManager {
 
 	public async loadAllFiles(): Promise<void> {
 		this._achievement = await this.read<IAchievement>(DbcFiles.achievement, dbcFields.achievement).toArray();
-		this._achievementCategory = await this.read<IAchievementCategory>(DbcFiles.achievementCategory, dbcFields.achievementCategory).toArray();
+		this._achievementCategory = await this.read<IAchievementCategory>(
+			DbcFiles.achievementCategory,
+			dbcFields.achievementCategory,
+		).toArray();
 		this._glyphProperties = await this.read<IGlyphProperties>(DbcFiles.glyphProperties, dbcFields.glyphProperties).toArray();
 		this._item = await this.read<IItemDbc>(DbcFiles.item, dbcFields.item).toArray();
 		this._itemRetail = await this.read<IItemRetailDbc>(DbcFiles.itemRetail, dbcFields.itemRetail).toArray();
 		this._itemAppearance = await this.read<IItemAppearanceDbc>(DbcFiles.itemAppearance, dbcFields.itemAppearance).toArray();
-		this._itemModifiedAppearance = await this.read<IItemModifiedAppearanceDbc>(DbcFiles.itemModifiedAppearance, dbcFields.itemModifiedAppearance).toArray();
+		this._itemModifiedAppearance = await this.read<IItemModifiedAppearanceDbc>(
+			DbcFiles.itemModifiedAppearance,
+			dbcFields.itemModifiedAppearance,
+		).toArray();
 		this._itemDisplayInfo = await this.read<IItemDisplayInfoDbc>(DbcFiles.itemDisplayInfo, dbcFields.itemDisplayInfo).toArray();
 		this._mount = await this.read<IMountDbc>(DbcFiles.mount, dbcFields.mount).toArray();
 		this._mountDisplay = await this.read<IMountXDisplayDbc>(DbcFiles.mountDisplay, dbcFields.mountDisplay).toArray();
 		this._spell = await this.read<ISpellDbc>(DbcFiles.spell, dbcFields.spell).toArray();
-		this._spellItemEnchantment = await this.read<ISpellItemEnchantmentDbc>(DbcFiles.spellItemEnchantment, dbcFields.spellItemEnchantment).toArray();
+		this._spellItemEnchantment = await this.read<ISpellItemEnchantmentDbc>(
+			DbcFiles.spellItemEnchantment,
+			dbcFields.spellItemEnchantment,
+		).toArray();
 		this._spellIcon = await this.read<ISpellIcon>(DbcFiles.spellIcon, dbcFields.spellIcon).toArray();
 		this._talent = await this.read<ITalent>(DbcFiles.talent, dbcFields.talent).toArray();
 		this._talentTab = await this.read<ITalentTab>(DbcFiles.talentTab, dbcFields.talentTab).toArray();

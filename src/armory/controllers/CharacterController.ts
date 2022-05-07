@@ -31,6 +31,7 @@ interface IEquipmentData {
 	randomPropertyId: number;
 	classId: number;
 	subclassId: number;
+	quality: number;
 }
 
 interface ICustomizationOption {
@@ -90,7 +91,7 @@ export class CharacterController {
 		this.itemInventoryTypes = {};
 		const itemsRetail = await this.armory.dbc.itemRetail().toArray();
 		for await (const item of this.armory.dbc.item()) {
-			const retailItem = itemsRetail.find(row => row.id === item.id);
+			const retailItem = itemsRetail.find((row) => row.id === item.id);
 			if (retailItem !== undefined) {
 				this.itemInventoryTypes[item.id] = retailItem.inventoryType;
 			}
@@ -109,7 +110,7 @@ export class CharacterController {
 		}
 
 		this.gemItems = {};
-		for await (const row of this.armory.dbc.item().filter(item => item.classId === ItemClassGem)) {
+		for await (const row of this.armory.dbc.item().filter((item) => item.classId === ItemClassGem)) {
 			this.gemItems[row.id] = true;
 		}
 
@@ -127,16 +128,17 @@ export class CharacterController {
 			this.itemSocketBonuses[row.entry] = row.socketBonus;
 		}
 
-		const mountSpells = await this.armory.dbc.spell()
-			.filter(m => m.mechanic === SpellMechanicMounted)
+		const mountSpells = await this.armory.dbc
+			.spell()
+			.filter((m) => m.mechanic === SpellMechanicMounted)
 			.toArray();
-		this.mountSpells = mountSpells.map(spell => spell.id);
+		this.mountSpells = mountSpells.map((spell) => spell.id);
 		this.mountBySpellId = {};
 		for (const spell of mountSpells) {
-			const mount = await this.armory.dbc.mount().find(m => m.sourceSpellId === spell.id);
-			const icon = await this.armory.dbc.spellIcon().find(icon => icon.id === spell.spellIconId);
+			const mount = await this.armory.dbc.mount().find((m) => m.sourceSpellId === spell.id);
+			const icon = await this.armory.dbc.spellIcon().find((icon) => icon.id === spell.spellIconId);
 			if (mount !== undefined) {
-				const display = await this.armory.dbc.mountDisplay().find(d => d.mountId === mount.id);
+				const display = await this.armory.dbc.mountDisplay().find((d) => d.mountId === mount.id);
 				if (display !== undefined) {
 					this.mountBySpellId[spell.id] = {
 						creatureDisplayId: display.creatureDisplayInfoId,
@@ -171,7 +173,7 @@ export class CharacterController {
 
 		const equipmentData = await this.getEquipmentData(realmName, charData.guid);
 		const customization = this.getCustomizationOptions(charData);
-		const equipment = equipmentData.map(row => {
+		const equipment = equipmentData.map((row) => {
 			(row as any).icon = this.itemIcons[row.itemEntry];
 			(row as any).gems = this.getGemsFromEnchantments(row.enchantments);
 			(row as any).enchantments = this.filterEnchantments(row.itemEntry, row.enchantments);
@@ -264,7 +266,7 @@ export class CharacterController {
 
 		res.json({
 			categories: await this.armory.dbc.achievementCategory().toArray(),
-			...await this.getAchievements(realm.name, charData),
+			...(await this.getAchievements(realm.name, charData)),
 		});
 	}
 
@@ -314,10 +316,10 @@ export class CharacterController {
 				FROM \`characters\`
 				LEFT JOIN \`guild_member\` ON \`guild_member\`.\`guid\` = \`characters\`.\`guid\`
 				LEFT JOIN \`guild\` ON \`guild\`.\`guildid\` = \`guild_member\`.\`guildid\`
-				LEFT JOIN \`${realm.authDatabase}\`.\`account_access\` ON \`account_access\`.\`id\` = \`characters\`.\`account\`
+				LEFT JOIN \`${realm.authDatabase}\`.\`account_access\` ON \`account_access\`.\`id\` = \`characters\`.\`account\` AND \`account_access\`.\`RealmID\` IN (-1, ${realm.realmId}) AND \`account_access\`.\`gmlevel\` > 0
 				WHERE
 					${where}
-					AND (\`account_access\`.\`id\` IS NULL OR \`account_access\`.\`RealmID\` NOT IN (-1, ${realm.realmId}) OR \`account_access\`.\`gmlevel\` = 0 OR ? = 0)
+					AND (\`account_access\`.\`id\` IS NULL OR ? = 0)
 			`,
 			values: [character, this.armory.config.hideGameMasters ? 1 : 0],
 			timeout: this.armory.config.dbQueryTimeout,
@@ -330,7 +332,7 @@ export class CharacterController {
 	}
 
 	private async getEquipmentData(realm: string, charGuid: number): Promise<IEquipmentData[]> {
-		const [rows, fields] = await this.armory.getCharactersDb(realm).query({
+		let [rows, fields] = await this.armory.getCharactersDb(realm).query({
 			sql: `
 				SELECT character_inventory.slot, item_instance.itemEntry, item_instance.flags, item_instance.enchantments, item_instance.randomPropertyId
 				FROM character_inventory
@@ -344,9 +346,19 @@ export class CharacterController {
 		const data = rows as RowDataPacket[] as IEquipmentData[];
 
 		for (const row of data) {
-			const item = await this.armory.dbc.item().find(item => item.id === row.itemEntry);
+			const item = await this.armory.dbc.item().find((item) => item.id === row.itemEntry);
 			row.classId = item.classId;
 			row.subclassId = item.subclassId;
+		}
+
+		[rows, fields] = await this.armory.worldDb.query({
+			sql: "SELECT entry, quality FROM item_template WHERE entry IN (?)",
+			values: [data.map((row) => row.itemEntry)],
+			timeout: this.armory.config.dbQueryTimeout,
+		});
+		for (const row of rows as RowDataPacket[]) {
+			const item = data.find((item) => item.itemEntry === row.entry);
+			item.quality = row.quality;
 		}
 
 		return data;
@@ -363,29 +375,27 @@ export class CharacterController {
 			timeout: this.armory.config.dbQueryTimeout,
 		});
 
-		return (rows as RowDataPacket[])
-			.map(row => this.mountBySpellId[row.spell])
-			.filter(m => m !== undefined);
+		return (rows as RowDataPacket[]).map((row) => this.mountBySpellId[row.spell]).filter((m) => m !== undefined);
 	}
 
 	private async getModelViewerItems(equipmentData: IEquipmentData[], charClass: number): Promise<number[][]> {
 		if (charClass !== 3) {
 			// Keep ranged weapon only if the character is a hunter
-			equipmentData = equipmentData.filter(row => row.slot !== 17);
+			equipmentData = equipmentData.filter((row) => row.slot !== 17);
 		}
-		const visibleEquipment = equipmentData.
-			filter(item =>
+		const visibleEquipment = equipmentData.filter(
+			(item) =>
 				[0, 2, 3, 4, 5, 6, 7, 8, 9, 14, 15, 16, 17, 18].includes(item.slot) && // visible slots
-				item.itemEntry !== 5976 // filter out Guild Tabard (displays blank otherwise)
-			);
+				item.itemEntry !== 5976, // filter out Guild Tabard (displays blank otherwise)
+		);
 
 		const items: number[][] = [];
 		for (const equipment of visibleEquipment) {
-			const modifiedAppearance = await this.armory.dbc.itemModifiedAppearance().find(row => row.itemId === equipment.itemEntry);
+			const modifiedAppearance = await this.armory.dbc.itemModifiedAppearance().find((row) => row.itemId === equipment.itemEntry);
 			if (modifiedAppearance === undefined) {
 				continue;
 			}
-			const appearance = await this.armory.dbc.itemAppearance().find(row => row.id === modifiedAppearance.itemAppearanceId);
+			const appearance = await this.armory.dbc.itemAppearance().find((row) => row.id === modifiedAppearance.itemAppearanceId);
 			if (appearance === undefined) {
 				continue;
 			}
@@ -400,52 +410,53 @@ export class CharacterController {
 		return enchantments
 			.trim()
 			.split(" ")
-			.map(enchant => parseInt(enchant))
-			.filter(enchant => enchant !== 0);
+			.map((enchant) => parseInt(enchant))
+			.filter((enchant) => enchant !== 0);
 	}
 
 	private getGemsFromEnchantments(enchantments: string): number[] {
 		return this.parseEnchantmentsString(enchantments)
-			.filter(enchant => enchant in this.enchantSrcItems && this.enchantSrcItems[enchant] in this.gemItems)
-			.map(enchant => this.enchantSrcItems[enchant]);
+			.filter((enchant) => enchant in this.enchantSrcItems && this.enchantSrcItems[enchant] in this.gemItems)
+			.map((enchant) => this.enchantSrcItems[enchant]);
 	}
 
 	private filterEnchantments(item: number, enchantments: string): number[] {
 		const socketBonus = this.itemSocketBonuses[item];
-		return this.parseEnchantmentsString(enchantments)
-			.filter(enchant => enchant in this.enchantSrcItems && !(this.enchantSrcItems[enchant] in this.gemItems) && enchant !== socketBonus);
+		return this.parseEnchantmentsString(enchantments).filter(
+			(enchant) => enchant in this.enchantSrcItems && !(this.enchantSrcItems[enchant] in this.gemItems) && enchant !== socketBonus,
+		);
 	}
 
 	private getCustomizationOptions(charData: ICharacterData): ICustomizationOption[] {
 		const data = this.armory.characterCustomization.getCharacterCustomizationData(charData.race, charData.gender);
 		const options = [];
 		const setOptionByChoiceIndex = (optionName: string, choiceIndex: number) => {
-			const option = data.Options.find(opt => opt.Name === optionName);
+			const option = data.Options.find((opt) => opt.Name === optionName);
 			if (option !== undefined) {
-				const choice = option.Choices.find(choice => choice.OrderIndex === choiceIndex);
+				const choice = option.Choices.find((choice) => choice.OrderIndex === choiceIndex);
 				if (choice !== undefined) {
 					options.push({ optionId: option.Id, choiceId: choice.Id });
 				}
 			}
 		};
 		const setOptionByChoiceName = (optionName: string, choiceName: string) => {
-			const option = data.Options.find(opt => opt.Name === optionName);
+			const option = data.Options.find((opt) => opt.Name === optionName);
 			if (option !== undefined) {
-				const choice = option.Choices.find(ch => ch.Name === choiceName);
+				const choice = option.Choices.find((ch) => ch.Name === choiceName);
 				if (choice !== undefined) {
 					options.push({ optionId: option.Id, choiceId: choice.Id });
 				}
 			}
 		};
 		const setOptionByChoiceId = (optionName: string, choiceId: number) => {
-			const option = data.Options.find(opt => opt.Name === optionName);
+			const option = data.Options.find((opt) => opt.Name === optionName);
 			if (option !== undefined) {
 				options.push({ optionId: option.Id, choiceId: choiceId });
 			}
 		};
 
 		const optionMapping = {
-			"Face": charData.face,
+			Face: charData.face,
 			"Skin Color": charData.skin,
 			"Hair Style": charData.hairStyle,
 			"Hair Color": charData.hairColor,
@@ -458,19 +469,54 @@ export class CharacterController {
 		switch (charData.race) {
 			case 1: // Human
 				if (charData.gender === 0) {
-					setOptionByChoiceName("Mustache", { 0: "Horseshoe", 1: "Brush", 2: "Horseshoe", 3: "None", 4: "Brush", 5: "Brush", 6: "Horseshoe", 7: "Brush", 8: "None" }[charData.facialStyle]);
-					setOptionByChoiceName("Beard", { 0: "Short", 1: "Chin Puff", 2: "Soul Patch", 3: "Goatee", 4: "Goatee", 5: "None", 6: "Goatee", 7: "None", 8: "None" }[charData.facialStyle]);
-					setOptionByChoiceName("Sideburns", { 0: "Medium", 1: "None", 2: "None", 3: "Medium", 4: "Long", 5: "Long", 6: "None", 8: "None", 7: "None" }[charData.facialStyle]);
+					setOptionByChoiceName(
+						"Mustache",
+						{ 0: "Horseshoe", 1: "Brush", 2: "Horseshoe", 3: "None", 4: "Brush", 5: "Brush", 6: "Horseshoe", 7: "Brush", 8: "None" }[
+							charData.facialStyle
+						],
+					);
+					setOptionByChoiceName(
+						"Beard",
+						{ 0: "Short", 1: "Chin Puff", 2: "Soul Patch", 3: "Goatee", 4: "Goatee", 5: "None", 6: "Goatee", 7: "None", 8: "None" }[
+							charData.facialStyle
+						],
+					);
+					setOptionByChoiceName(
+						"Sideburns",
+						{ 0: "Medium", 1: "None", 2: "None", 3: "Medium", 4: "Long", 5: "Long", 6: "None", 8: "None", 7: "None" }[charData.facialStyle],
+					);
 					setOptionByChoiceName("Eyebrows", "Natural");
 					setOptionByChoiceName("Face Shape", "Narrow");
-					setOptionByChoiceId("Eye Color", { 0: 4138, 1: 4140, 2: 4130, 3: 4136, 4: 4141, 5: 4134, 6: 4130, 7: 4138, 8: 4144, 9: 4135, 10: 4126, 11: 4136 }[charData.face]);
+					setOptionByChoiceId(
+						"Eye Color",
+						{ 0: 4138, 1: 4140, 2: 4130, 3: 4136, 4: 4141, 5: 4134, 6: 4130, 7: 4138, 8: 4144, 9: 4135, 10: 4126, 11: 4136 }[charData.face],
+					);
 				} else {
 					setOptionByChoiceIndex("Piercings", charData.facialStyle);
 					setOptionByChoiceName("Eyebrows", "Natural");
 					setOptionByChoiceName("Face Shape", "Narrow");
 					setOptionByChoiceName("Makeup", "None");
 					setOptionByChoiceName("Necklace", "None");
-					setOptionByChoiceId("Eye Color", { 0: 4162, 1: 4153, 2: 4161, 3: 4164, 4: 4154, 5: 4160, 6: 4160, 7: 4157, 8: 4152, 9: 4154, 10: 4155, 11: 4165, 12: 4163, 13: 4155, 14: 4151 }[charData.face]);
+					setOptionByChoiceId(
+						"Eye Color",
+						{
+							0: 4162,
+							1: 4153,
+							2: 4161,
+							3: 4164,
+							4: 4154,
+							5: 4160,
+							6: 4160,
+							7: 4157,
+							8: 4152,
+							9: 4154,
+							10: 4155,
+							11: 4165,
+							12: 4163,
+							13: 4155,
+							14: 4151,
+						}[charData.face],
+					);
 				}
 				if (charData.class === 6) {
 					// Death Knight
@@ -482,14 +528,32 @@ export class CharacterController {
 				setOptionByChoiceIndex("Tattoo Color", 0);
 				setOptionByChoiceIndex("Eyebrows", 0);
 				if (charData.gender === 0) {
-					setOptionByChoiceName("Mustache", { 0: "Trimmed", 1: "Bushy", 2: "Grand", 3: "Thin Braids", 4: "Wise", 5: "Thick Braids", 6: "Fancy", 7: "Bold", 8: "Tied", 9: "None", 10: "None", }[charData.facialStyle]);
+					setOptionByChoiceName(
+						"Mustache",
+						{
+							0: "Trimmed",
+							1: "Bushy",
+							2: "Grand",
+							3: "Thin Braids",
+							4: "Wise",
+							5: "Thick Braids",
+							6: "Fancy",
+							7: "Bold",
+							8: "Tied",
+							9: "None",
+							10: "None",
+						}[charData.facialStyle],
+					);
 					setOptionByChoiceIndex("Beard", charData.facialStyle);
 					setOptionByChoiceName("Earrings", "None");
 					setOptionByChoiceName("Nose Ring", "None");
 					setOptionByChoiceIndex("Eye Color", 0); // TODO
 				} else {
 					setOptionByChoiceIndex("Earrings", { 0: 0, 1: 1, 2: 2, 3: 3, 4: 0, 5: 4 }[charData.facialStyle]);
-					setOptionByChoiceName("Piercings", { 0: "None", 1: "None", 2: "None", 3: "None", 4: "Right Nostril", 5: "None" }[charData.facialStyle]);
+					setOptionByChoiceName(
+						"Piercings",
+						{ 0: "None", 1: "None", 2: "None", 3: "None", 4: "Right Nostril", 5: "None" }[charData.facialStyle],
+					);
 					setOptionByChoiceIndex("Eye Color", 0); // TODO
 				}
 				if (charData.class === 6) {
@@ -519,7 +583,10 @@ export class CharacterController {
 				setOptionByChoiceName("Ears", "Thin");
 				setOptionByChoiceName("Scars", "None");
 				if (charData.gender === 0) {
-					setOptionByChoiceName("Sideburns", { 0: "None", 1: "Groomed", 2: "None", 3: "Short", 4: "Medium", 5: "Groomed" }[charData.facialStyle]);
+					setOptionByChoiceName(
+						"Sideburns",
+						{ 0: "None", 1: "Groomed", 2: "None", 3: "Short", 4: "Medium", 5: "Groomed" }[charData.facialStyle],
+					);
 					setOptionByChoiceName("Mustache", { 0: "None", 1: "Groomed", 2: "None", 3: "Thin", 4: "None", 5: "None" }[charData.facialStyle]);
 					setOptionByChoiceName("Beard", { 0: "None", 1: "Trimmed", 2: "Full", 3: "None", 4: "Short", 5: "Long" }[charData.facialStyle]);
 					setOptionByChoiceName("Eyebrows", { 0: "Shaved", 1: "Short", 2: "Long", 3: "Flat", 4: "Short", 5: "Owl" }[charData.facialStyle]);
@@ -549,10 +616,21 @@ export class CharacterController {
 				setOptionByChoiceName("Horn Decoration", "None");
 				setOptionByChoiceName("Tail", charData.gender === 0 ? "Long" : "Short");
 				if (charData.gender === 0) {
-					setOptionByChoiceName("Facial Hair", { 0: "Bare", 1: "Bare", 2: "Burns", 3: "Chops", 4: "Mustache", 5: "Soul Patch", 6: "Handlebar", 7: "Bare" }[charData.facialStyle]);
-					setOptionByChoiceName("Tendrils", { 0: "None", 1: "Splayed", 2: "Double", 3: "Fanned", 4: "Single", 5: "Paired", 6: "Uniform", 7: "Twin" }[charData.facialStyle]);
+					setOptionByChoiceName(
+						"Facial Hair",
+						{ 0: "Bare", 1: "Bare", 2: "Burns", 3: "Chops", 4: "Mustache", 5: "Soul Patch", 6: "Handlebar", 7: "Bare" }[
+							charData.facialStyle
+						],
+					);
+					setOptionByChoiceName(
+						"Tendrils",
+						{ 0: "None", 1: "Splayed", 2: "Double", 3: "Fanned", 4: "Single", 5: "Paired", 6: "Uniform", 7: "Twin" }[charData.facialStyle],
+					);
 				} else {
-					setOptionByChoiceName("Horns", { 0: "Sweeping", 1: "Curled", 2: "Curved", 3: "Thick", 4: "Wide", 5: "Grand", 6: "Short" }[charData.facialStyle]);
+					setOptionByChoiceName(
+						"Horns",
+						{ 0: "Sweeping", 1: "Curled", 2: "Curved", 3: "Thick", 4: "Wide", 5: "Grand", 6: "Short" }[charData.facialStyle],
+					);
 				}
 				if (charData.class === 6) {
 					// Death Knight
@@ -568,8 +646,28 @@ export class CharacterController {
 				setOptionByChoiceName("War Paint", "None");
 				setOptionByChoiceName("War Paint Color", "None");
 				if (charData.gender === 0) {
-					setOptionByChoiceName("Beard", { 0: "None", 1: "Stubble", 2: "Thick", 3: "Full", 4: "Tied", 5: "Braid", 6: "Twin Braids", 7: "None", 8: "Ringed", 9: "Split", 10: "Goatee" }[charData.facialStyle]);
-					setOptionByChoiceName("Sideburns", { 0: "None", 1: "None", 2: "Full", 3: "Low", 4: "Full", 5: "None", 6: "None", 7: "Braids", 8: "None", 9: "Full", 10: "Thick" }[charData.facialStyle]);
+					setOptionByChoiceName(
+						"Beard",
+						{
+							0: "None",
+							1: "Stubble",
+							2: "Thick",
+							3: "Full",
+							4: "Tied",
+							5: "Braid",
+							6: "Twin Braids",
+							7: "None",
+							8: "Ringed",
+							9: "Split",
+							10: "Goatee",
+						}[charData.facialStyle],
+					);
+					setOptionByChoiceName(
+						"Sideburns",
+						{ 0: "None", 1: "None", 2: "Full", 3: "Low", 4: "Full", 5: "None", 6: "None", 7: "Braids", 8: "None", 9: "Full", 10: "Thick" }[
+							charData.facialStyle
+						],
+					);
 					setOptionByChoiceName("Earrings", "None");
 					setOptionByChoiceName("Nose Ring", "None");
 					setOptionByChoiceName("Tusks", "Natural");
@@ -589,13 +687,71 @@ export class CharacterController {
 			case 5: // Undead
 				setOptionByChoiceName("Skin Type", "Bony");
 				if (charData.gender === 0) {
-					setOptionByChoiceName("Jaw Features", { 0: "Intact", 1: "Rot-Kissed", 2: "Intact", 3: "Slackjawed", 4: "Drooler", 5: "Intact", 6: "Slackjawed", 7: "Drooler", 8: "Bonejawed", 9: "Jawsome", 10: "Toothy", 11: "Unhinged", 12: "Cheeky", 13: "Loose", 14: "Intact", 15: "Slackjawed", 16: "Slobber" }[charData.facialStyle]);
-					setOptionByChoiceIndex("Face Features", { 0: 0, 1: 0, 2: 1, 3: 1, 4: 1, 5: 2, 6: 3, 7: 3, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 4, 15: 4, 16: 0 }[charData.facialStyle]);
-					setOptionByChoiceId("Eye Color", { 0: 5330, 1: 5330, 2: 6304, 3: 6304, 4: 6304, 5: 5330, 6: 5330, 7: 5330, 8: 5330, 9: 5330, 10: 6304, 11: 6304, 12: 5330, 13: 5330, 14: 5330, 15: 5330, 16: 5330 }[charData.facialStyle]);
+					setOptionByChoiceName(
+						"Jaw Features",
+						{
+							0: "Intact",
+							1: "Rot-Kissed",
+							2: "Intact",
+							3: "Slackjawed",
+							4: "Drooler",
+							5: "Intact",
+							6: "Slackjawed",
+							7: "Drooler",
+							8: "Bonejawed",
+							9: "Jawsome",
+							10: "Toothy",
+							11: "Unhinged",
+							12: "Cheeky",
+							13: "Loose",
+							14: "Intact",
+							15: "Slackjawed",
+							16: "Slobber",
+						}[charData.facialStyle],
+					);
+					setOptionByChoiceIndex(
+						"Face Features",
+						{ 0: 0, 1: 0, 2: 1, 3: 1, 4: 1, 5: 2, 6: 3, 7: 3, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 4, 15: 4, 16: 0 }[
+							charData.facialStyle
+						],
+					);
+					setOptionByChoiceId(
+						"Eye Color",
+						{
+							0: 5330,
+							1: 5330,
+							2: 6304,
+							3: 6304,
+							4: 6304,
+							5: 5330,
+							6: 5330,
+							7: 5330,
+							8: 5330,
+							9: 5330,
+							10: 6304,
+							11: 6304,
+							12: 5330,
+							13: 5330,
+							14: 5330,
+							15: 5330,
+							16: 5330,
+						}[charData.facialStyle],
+					);
 				} else {
-					setOptionByChoiceName("Face Features", { 0: "None", 1: "None", 2: "Strapped", 3: "Rotting", 4: "None", 5: "None", 6: "None", 7: "Putrid" }[charData.facialStyle]);
-					setOptionByChoiceName("Jaw Features", { 0: "Intact", 1: "Stitched", 2: "Intact", 3: "Intact", 4: "Bonejawed", 5: "Toothy", 6: "Cheeky", 7: "Intact" }[charData.facialStyle]);
-					setOptionByChoiceId("Eye Color", { 0: 5337, 1: 5337, 2: 6305, 3: 5337, 4: 5337, 5: 6305, 6: 5337, 7: 5337 }[charData.facialStyle]);
+					setOptionByChoiceName(
+						"Face Features",
+						{ 0: "None", 1: "None", 2: "Strapped", 3: "Rotting", 4: "None", 5: "None", 6: "None", 7: "Putrid" }[charData.facialStyle],
+					);
+					setOptionByChoiceName(
+						"Jaw Features",
+						{ 0: "Intact", 1: "Stitched", 2: "Intact", 3: "Intact", 4: "Bonejawed", 5: "Toothy", 6: "Cheeky", 7: "Intact" }[
+							charData.facialStyle
+						],
+					);
+					setOptionByChoiceId(
+						"Eye Color",
+						{ 0: 5337, 1: 5337, 2: 6305, 3: 5337, 4: 5337, 5: 6305, 6: 5337, 7: 5337 }[charData.facialStyle],
+					);
 				}
 				if (charData.class === 6) {
 					// Death Knight
@@ -614,9 +770,18 @@ export class CharacterController {
 				setOptionByChoiceName("Body Paint", "None");
 				setOptionByChoiceIndex("Paint Color", 0);
 				if (charData.gender === 0) {
-					setOptionByChoiceName("Hair", { 0: "Mane", 1: "Braids", 2: "Chops", 3: "Sideburns", 4: "Mane", 5: "Wrapped", 6: "Braids" }[charData.facialStyle]);
-					setOptionByChoiceName("Facial Hair", { 0: "Clean", 1: "Braid", 2: "Beard", 3: "Wrapped", 4: "Curtain", 5: "Clean", 6: "Split" }[charData.facialStyle]);
-					setOptionByChoiceName("Nose Ring", { 0: "None", 1: "Small", 2: "Open", 3: "None", 4: "None", 5: "Bead", 6: "Open" }[charData.facialStyle]);
+					setOptionByChoiceName(
+						"Hair",
+						{ 0: "Mane", 1: "Braids", 2: "Chops", 3: "Sideburns", 4: "Mane", 5: "Wrapped", 6: "Braids" }[charData.facialStyle],
+					);
+					setOptionByChoiceName(
+						"Facial Hair",
+						{ 0: "Clean", 1: "Braid", 2: "Beard", 3: "Wrapped", 4: "Curtain", 5: "Clean", 6: "Split" }[charData.facialStyle],
+					);
+					setOptionByChoiceName(
+						"Nose Ring",
+						{ 0: "None", 1: "Small", 2: "Open", 3: "None", 4: "None", 5: "Bead", 6: "Open" }[charData.facialStyle],
+					);
 					setOptionByChoiceIndex("Eye Color", 0); // TODO
 				} else {
 					setOptionByChoiceIndex("Hair", charData.facialStyle);
@@ -634,8 +799,38 @@ export class CharacterController {
 				setOptionByChoiceName("Body Paint Color", "None");
 				setOptionByChoiceName("Piercing", "None");
 				if (charData.gender === 0) {
-					setOptionByChoiceName("Tusks", { 0: "Tusked", 1: "Gougers", 2: "Mammoth", 3: "Spears", 4: "Bridle", 5: "Tusked", 6: "Gougers", 7: "Mammoth", 8: "Spears", 9: "Bridle", 10: "Gougers" }[charData.facialStyle]);
-					setOptionByChoiceName("Face Paint", { 0: "None", 1: "None", 2: "None", 3: "None", 4: "None", 5: "Berserker", 6: "Fangs", 7: "Mask", 8: "Oni", 9: "Prophet", 10: "War" }[charData.facialStyle]);
+					setOptionByChoiceName(
+						"Tusks",
+						{
+							0: "Tusked",
+							1: "Gougers",
+							2: "Mammoth",
+							3: "Spears",
+							4: "Bridle",
+							5: "Tusked",
+							6: "Gougers",
+							7: "Mammoth",
+							8: "Spears",
+							9: "Bridle",
+							10: "Gougers",
+						}[charData.facialStyle],
+					);
+					setOptionByChoiceName(
+						"Face Paint",
+						{
+							0: "None",
+							1: "None",
+							2: "None",
+							3: "None",
+							4: "None",
+							5: "Berserker",
+							6: "Fangs",
+							7: "Mask",
+							8: "Oni",
+							9: "Prophet",
+							10: "War",
+						}[charData.facialStyle],
+					);
 					setOptionByChoiceIndex("Face Paint Color", charData.hairColor + 1);
 					setOptionByChoiceName("Earrings", "None");
 					setOptionByChoiceIndex("Eye Color", 0); // TODO
@@ -712,16 +907,18 @@ export class CharacterController {
 	}
 
 	private async getTalentTrees(classId: number) {
-		const items = await this.armory.dbc.talentTab()
-			.filter(tab => tab.classMask === Math.pow(2, classId - 1))
-			.map(async tab => {
-				const icon = await this.armory.dbc.spellIcon().find(icon => icon.id === tab.spellIconId);
-				const spells = await this.armory.dbc.talent()
-					.filter(row => row.tabId === tab.id)
-					.map(async row => {
-						const spell = await this.armory.dbc.spell().find(spell => spell.id === row.spellRank0);
-						const icon = await this.armory.dbc.spellIcon().find(icon => icon.id === spell?.spellIconId);
-						return { ...row, icon: this.processSpellIconTexture(icon?.textureFilename ?? ""), };
+		const items = await this.armory.dbc
+			.talentTab()
+			.filter((tab) => tab.classMask === Math.pow(2, classId - 1))
+			.map(async (tab) => {
+				const icon = await this.armory.dbc.spellIcon().find((icon) => icon.id === tab.spellIconId);
+				const spells = await this.armory.dbc
+					.talent()
+					.filter((row) => row.tabId === tab.id)
+					.map(async (row) => {
+						const spell = await this.armory.dbc.spell().find((spell) => spell.id === row.spellRank0);
+						const icon = await this.armory.dbc.spellIcon().find((icon) => icon.id === spell?.spellIconId);
+						return { ...row, icon: this.processSpellIconTexture(icon?.textureFilename ?? "") };
 					})
 					.toArray();
 				return {
@@ -735,11 +932,7 @@ export class CharacterController {
 	}
 
 	private processSpellIconTexture(texturePath: string): string {
-		return texturePath
-			.toLowerCase()
-			.replace("interface\\icons\\", "")
-			.replace("interface\\spellbook\\", "")
-			.replace(/\.$/, "");
+		return texturePath.toLowerCase().replace("interface\\icons\\", "").replace("interface\\spellbook\\", "").replace(/\.$/, "");
 	}
 
 	private async getGlyphs(realm: string, character: number): Promise<any[][]> {
@@ -755,9 +948,9 @@ export class CharacterController {
 
 		const glyphs = [[], []];
 		for (const row of rows as RowDataPacket[]) {
-			const glyphIds = [row.glyph1, row.glyph2, row.glyph3, row.glyph4, row.glyph5, row.glyph6].filter(id => id !== 0);
+			const glyphIds = [row.glyph1, row.glyph2, row.glyph3, row.glyph4, row.glyph5, row.glyph6].filter((id) => id !== 0);
 			for (const glyphId of glyphIds) {
-				const glyph = await this.armory.dbc.glyphProperties().find(g => g.id === glyphId);
+				const glyph = await this.armory.dbc.glyphProperties().find((g) => g.id === glyphId);
 				if (glyph === undefined) {
 					continue;
 				}
@@ -768,11 +961,12 @@ export class CharacterController {
 		return glyphs;
 	}
 
-	private async getAchievements(realm: string, charData: ICharacterData): Promise<{ achievements: any[]; earned: { [key: number]: any }; }> {
-		const promises = await this.armory.dbc.achievement()
-			.filter(ach => ach.faction === -1 || ach.faction === Utils.getFactionFromRaceId(charData.race))
+	private async getAchievements(realm: string, charData: ICharacterData): Promise<{ achievements: any[]; earned: { [key: number]: any } }> {
+		const promises = await this.armory.dbc
+			.achievement()
+			.filter((ach) => ach.faction === -1 || ach.faction === Utils.getFactionFromRaceId(charData.race))
 			.map(async (ach) => {
-				const icon = await this.armory.dbc.spellIcon().find(icon => icon.id === ach.iconId);
+				const icon = await this.armory.dbc.spellIcon().find((icon) => icon.id === ach.iconId);
 				return {
 					id: ach.id,
 					category: ach.category,
@@ -807,7 +1001,7 @@ export class CharacterController {
 		};
 	}
 
-	private async getPvpKills(realm: string, charGuid: number): Promise<{ total: number, today: number, yesterday: number }> {
+	private async getPvpKills(realm: string, charGuid: number): Promise<{ total: number; today: number; yesterday: number }> {
 		const [rows, fields] = await this.armory.getCharactersDb(realm).query({
 			sql: `
 				SELECT totalKills, todayKills, yesterdayKills
@@ -841,7 +1035,7 @@ export class CharacterController {
 			timeout: this.armory.config.dbQueryTimeout,
 		});
 
-		return (rows as RowDataPacket[]).map(row => {
+		return (rows as RowDataPacket[]).map((row) => {
 			row.emblem = Utils.makeEmblemObject(row, false);
 			return row;
 		});

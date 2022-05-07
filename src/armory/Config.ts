@@ -105,7 +105,7 @@ export class Config {
 		let i = 0;
 		while (true) {
 			const key = Config.getEnvKey(parentName + i);
-			const found = Object.keys(process.env).some(k => k.startsWith(key));
+			const found = Object.keys(process.env).some((k) => k.startsWith(key));
 			if (!found) {
 				break;
 			}
@@ -115,7 +115,7 @@ export class Config {
 			} else if (typeof model === "object") {
 				const obj = {};
 				Config.loadObjFromEnv(logger, obj, model, parentName + i);
-				if (Object.keys(obj).length > 0) {
+				if (Object.keys(obj).length) {
 					arr.push(obj);
 				}
 			} else if (process.env.hasOwnProperty(key)) {
@@ -131,10 +131,14 @@ export class Config {
 	}
 
 	private static getEnvKey(key: string): string {
-		return Config.envPrefix + "_" + key
-			.replace(/\./g, "__")
-			.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`)
-			.toUpperCase();
+		return (
+			Config.envPrefix +
+			"_" +
+			key
+				.replace(/\./g, "__")
+				.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`)
+				.toUpperCase()
+		);
 	}
 
 	private static parseEnvValue(value: string, model: any): any {
@@ -157,7 +161,7 @@ export class Config {
 		for (const field of missing) {
 			logger.warn(`Field ${parentName}${field} is missing from config.json!`);
 		}
-		for (const key in model) {
+		for (const key of Object.keys(model)) {
 			if (typeof model[key] === "object" && obj.hasOwnProperty(key)) {
 				Config.checkAllMissingFields(logger, obj[key], model[key], parentName + key);
 			}
@@ -165,12 +169,8 @@ export class Config {
 	}
 
 	private static hasMissingFields(obj: object, model: object): string[] {
-		const missing = [];
-		for (const key in model) {
-			if (!obj.hasOwnProperty(key)) {
-				missing.push(key);
-			}
-		}
-		return missing;
+		const objProp = Object.keys(obj);
+		const missingProps = Object.keys(model).filter((key) => !objProp.includes(key));
+		return missingProps;
 	}
-};
+}

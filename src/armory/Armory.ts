@@ -85,22 +85,23 @@ export class Armory {
 			websiteRoot: this.config.websiteRoot,
 			iframeMode: this.config.iframeMode,
 		};
-		for (const key in locals) {
-			if (locals.hasOwnProperty(key)) {
-				app.locals[key] = locals[key];
-			}
+		for (const key of Object.keys(locals)) {
+			app.locals[key] = locals[key];
 		}
 		app.locals.locals = locals;
 
-		app.engine(".hbs", handlebarsEngine({
-			extname: "hbs",
-			partialsDir: path.join(process.cwd(), "static", "partials"),
-			layoutsDir: path.join(process.cwd(), "static"),
-			defaultLayout: "layout.hbs",
-			helpers: {
-				...require("handlebars-helpers")(),
-			},
-		}));
+		app.engine(
+			".hbs",
+			handlebarsEngine({
+				extname: "hbs",
+				partialsDir: path.join(process.cwd(), "static", "partials"),
+				layoutsDir: path.join(process.cwd(), "static"),
+				defaultLayout: "layout.hbs",
+				helpers: {
+					...require("handlebars-helpers")(),
+				},
+			}),
+		);
 		app.set("view engine", "handlebars");
 		app.set("views", path.join(process.cwd(), "static"));
 
@@ -122,11 +123,13 @@ export class Armory {
 			}
 			return req.socket.remoteAddress;
 		});
-		app.use(morgan(":method :url :status - ID :id - IP :ip - :response-time ms", {
-			stream: {
-				write: (msg) => this.logger.http(msg.trim()),
-			},
-		}));
+		app.use(
+			morgan(":method :url :status - ID :id - IP :ip - :response-time ms", {
+				stream: {
+					write: (msg) => this.logger.http(msg.trim()),
+				},
+			}),
+		);
 
 		app.use("/js", express.static(`static/js`));
 		app.use("/css", express.static(`static/css`));
@@ -198,7 +201,7 @@ export class Armory {
 	}
 
 	public getRealm(realm: string): IRealmConfig {
-		return this.config.realms.find(r => r.name.toLowerCase() === realm.toLowerCase());
+		return this.config.realms.find((r) => r.name.toLowerCase() === realm.toLowerCase());
 	}
 
 	public async getDatabaseCharset(realm: string): Promise<string> {
