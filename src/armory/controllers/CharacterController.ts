@@ -31,6 +31,7 @@ interface IEquipmentData {
 	randomPropertyId: number;
 	classId: number;
 	subclassId: number;
+	quality: number;
 }
 
 interface ICustomizationOption {
@@ -331,7 +332,7 @@ export class CharacterController {
 	}
 
 	private async getEquipmentData(realm: string, charGuid: number): Promise<IEquipmentData[]> {
-		const [rows, fields] = await this.armory.getCharactersDb(realm).query({
+		let [rows, fields] = await this.armory.getCharactersDb(realm).query({
 			sql: `
 				SELECT character_inventory.slot, item_instance.itemEntry, item_instance.flags, item_instance.enchantments, item_instance.randomPropertyId
 				FROM character_inventory
@@ -348,6 +349,16 @@ export class CharacterController {
 			const item = await this.armory.dbc.item().find((item) => item.id === row.itemEntry);
 			row.classId = item.classId;
 			row.subclassId = item.subclassId;
+		}
+
+		[rows, fields] = await this.armory.worldDb.query({
+			sql: "SELECT entry, quality FROM item_template WHERE entry IN (?)",
+			values: [data.map((row) => row.itemEntry)],
+			timeout: this.armory.config.dbQueryTimeout,
+		});
+		for (const row of rows as RowDataPacket[]) {
+			const item = data.find((item) => item.itemEntry === row.entry);
+			item.quality = row.quality;
 		}
 
 		return data;
