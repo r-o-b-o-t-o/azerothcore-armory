@@ -36,7 +36,9 @@
 </div>
 
 <script type="application/javascript">
-	{{#each arenaTeams}}
-	createArenaEmblem({{this.type}}, {{{JSONstringify this.emblem}}}, $(".arena-team[data-team-id={{this.id}}] .arena-emblem")[0]);
-	{{/each}}
+	$(window).on("load", () => {
+		{{#each arenaTeams}}
+		createArenaEmblem({{this.type}}, {{{JSONstringify this.emblem}}}, $(".arena-team[data-team-id={{this.id}}] .arena-emblem")[0]);
+		{{/each}}
+	});
 </script>

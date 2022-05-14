@@ -34,49 +34,51 @@
 </table>
 
 <script type="application/javascript">
-	let dt;
+	$(window).on("load", () => {
+		let dt;
 
-	$("#select-realm").on("change", () => {
-		dt.draw();
-	});
+		$("#select-realm").on("change", () => {
+			dt.draw();
+		});
 
-	dt = $("#results").DataTable({
-		processing: true,
-		serverSide: true,
-		searchDelay: 800,
-		ajax: {
-			url: `{{websiteRoot}}/search`,
-			data: d => {
-				d.realm = $("#select-realm").val();
+		dt = $("#results").DataTable({
+			processing: true,
+			serverSide: true,
+			searchDelay: 800,
+			ajax: {
+				url: `{{websiteRoot}}/search`,
+				data: d => {
+					d.realm = $("#select-realm").val();
+				},
 			},
-		},
-		columnDefs: [
-			{
-				targets: 0,
-				render: (name, type, row, meta) => `<a href="{{websiteRoot}}/character/${meta.settings.json.realm}/${name}">${name}</a>`,
+			columnDefs: [
+				{
+					targets: 0,
+					render: (name, type, row, meta) => `<a href="{{websiteRoot}}/character/${meta.settings.json.realm}/${name}">${name}</a>`,
+				},
+				{
+					targets: 1,
+					render: (guild, type, row, meta) => guild === null ? "" : `<a href="{{websiteRoot}}/guild/${meta.settings.json.realm}/${guild}">${guild}</a>`,
+				},
+				{
+					searchable: false,
+					targets: 3,
+					render: data => `<img src="{{aowow}}/static/images/wow/icons/medium/class_${data}.jpg">`,
+				},
+				{
+					searchable: false,
+					targets: 4,
+					render: data => `<img src="{{aowow}}/static/images/wow/icons/medium/race_${data}.jpg">`,
+				},
+				{
+					searchable: false,
+					targets: 5,
+					render: online => online ? "🟢" : "🔴",
+				},
+			],
+			responsive: {
+				details: true,
 			},
-			{
-				targets: 1,
-				render: (guild, type, row, meta) => guild === null ? "" : `<a href="{{websiteRoot}}/guild/${meta.settings.json.realm}/${guild}">${guild}</a>`,
-			},
-			{
-				searchable: false,
-				targets: 3,
-				render: data => `<img src="{{aowow}}/static/images/wow/icons/medium/class_${data}.jpg">`,
-			},
-			{
-				searchable: false,
-				targets: 4,
-				render: data => `<img src="{{aowow}}/static/images/wow/icons/medium/race_${data}.jpg">`,
-			},
-			{
-				searchable: false,
-				targets: 5,
-				render: online => online ? "🟢" : "🔴",
-			},
-		],
-		responsive: {
-			details: true,
-		},
+		});
 	});
 </script>

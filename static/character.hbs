@@ -71,346 +71,348 @@
 </div>
 
 <script type="application/javascript">
-	const $model = $("#model");
-	const $itemSlotTemplate = $("#item-slot-template").detach().removeAttr("id");
-	const $mountTemplate = $("#mount-template").detach().removeAttr("id");
+	$(window).on("load", () => {
+		const $model = $("#model");
+		const $itemSlotTemplate = $("#item-slot-template").detach().removeAttr("id");
+		const $mountTemplate = $("#mount-template").detach().removeAttr("id");
 
-	window.WH = {
-		//debug: console.log,
-		debug: () => { },
-	};
+		window.WH = {
+			//debug: console.log,
+			debug: () => { },
+		};
 
-	const charData = {{{ JSONstringify data }}};
-	const races = {
-		1: "human",
-		2: "orc",
-		3: "dwarf",
-		4: "nightelf",
-		5: "scourge",
-		6: "tauren",
-		7: "gnome",
-		8: "troll",
-		10: "bloodelf",
-		11: "draenei",
-	};
-	const genders = ["male", "female"];
+		const charData = {{{ JSONstringify data }}};
+		const races = {
+			1: "human",
+			2: "orc",
+			3: "dwarf",
+			4: "nightelf",
+			5: "scourge",
+			6: "tauren",
+			7: "gnome",
+			8: "troll",
+			10: "bloodelf",
+			11: "draenei",
+		};
+		const genders = ["male", "female"];
 
-	if (Cookies.get("disable-3d-viewer") === "1") {
-		$("#3d-viewer-options").hide();
-	} else {
-		$("#cb-enable-3d-viewer").prop("checked", true);
-	}
-	$("#cb-enable-3d-viewer").change(() => {
-		const enabled = $("#cb-enable-3d-viewer").prop("checked");
-
-		if (enabled) {
-			Cookies.remove("disable-3d-viewer");
-			createViewer();
-			$("#3d-viewer-options").slideDown("fast");
-		} else {
-			Cookies.set("disable-3d-viewer", "1");
-			viewer?.destroy();
-			$("#3d-viewer-options").slideUp("fast");
-		}
-	});
-
-	const hideHelm = (charData.flags & 0x0400) === 0x0400;
-	$("#cb-hide-helmet").prop("checked", hideHelm);
-	const hideCloak = (charData.flags & 0x0800) === 0x0800;
-	$("#cb-hide-cloak").prop("checked", hideCloak);
-
-	$("#cb-hide-helmet").change(() => {
-		const hide = $("#cb-hide-helmet").prop("checked");
-		setSlotVisible(1, !hide);
-	});
-	$("#cb-hide-cloak").change(() => {
-		const hide = $("#cb-hide-cloak").prop("checked");
-		setSlotVisible(16, !hide);
-	});
-	$("#cb-hide-tabard").change(() => {
-		const hide = $("#cb-hide-tabard").prop("checked");
-		setSlotVisible(19, !hide);
-	});
-	if (charData.characterModelTransmogs === undefined) {
-		$("#cb-hide-transmogs").parent().hide();
-	}
-	$("#cb-hide-transmogs").change(() => {
-		const hide = $("#cb-hide-transmogs").prop("checked");
-		const items = hide ? charData.characterModelItems : charData.characterModelTransmogs;
-		for (const slot of (items.map((item) => item[0]))) {
-			clearSlots([slot]);
-		}
-
-		const hideHelm = $("#cb-hide-helmet").prop("checked");
-		const hideCloak = $("#cb-hide-cloak").prop("checked");
-		setItems(items.filter(item => !((item[0] === 1 && hideHelm) || (item[0] === 16 && hideCloak))));
-	});
-
-	let viewer;
-	function createViewer() {
 		if (Cookies.get("disable-3d-viewer") === "1") {
-			return;
-		}
-
-		viewer?.destroy();
-		viewer = new ZamModelViewer(characterModel);
-		const isLoadedInterval = setInterval(() => {
-			if (viewer.method("isLoaded")) {
-				clearInterval(isLoadedInterval);
-				setBackground("background.png");
-			}
-		}, 100);
-	}
-
-	function setSlotVisible(slot, visible) {
-		if (visible) {
-			const transmogged = !$("#cb-hide-transmogs").prop("checked");
-			const items = transmogged ? charData.characterModelTransmogs : charData.characterModelItems;
-			const item = items.find(([sl, appearance]) => sl === slot);
-			if (item !== undefined) {
-				setItems([item]);
-			}
+			$("#3d-viewer-options").hide();
 		} else {
-			clearSlots([slot]);
+			$("#cb-enable-3d-viewer").prop("checked", true);
 		}
-	}
+		$("#cb-enable-3d-viewer").change(() => {
+			const enabled = $("#cb-enable-3d-viewer").prop("checked");
 
-	function clearSlots(slots) {
-		viewer.method("clearSlots", slots.join(","));
-		characterModel.items = characterModel.items.filter(item => !slots.includes(item[0]));
-	}
-
-	function setItems(items) {
-		const data = items.map(([slot, display]) => {
-			return {
-				slot,
-				display,
-			};
-		});
-		viewer.method("setItems", [data]);
-
-		characterModel.items = characterModel.items.filter(item => !items.some(item2 => item[0] === item2[0]));
-		characterModel.items.push(...items);
-	}
-
-	function createItemSlot(item, invSlot, icon, quality, rel, container) {
-		const $item = $itemSlotTemplate.clone();
-		$item
-			.data("icon", icon)
-			.data("quality", quality)
-			.find(".inventory-slot")
-			.css("background-image", `url("{{websiteRoot}}/img/inventory-slot/${invSlot}.png")`);
-		if (item !== undefined) {
-			$item.data("item", item);
-			$item.find("a").attr("href", `{{aowow}}/?item=${item}`);
-			$item.find("a").attr("rel", rel);
-		}
-		$item.appendTo($(container));
-	}
-	const invSlotContainers = [
-		{ element: "#equipment-col-left", slots: [0, 1, 2, 14, 4, 3, 18, 8] },
-		{ element: "#equipment-col-right", slots: [9, 5, 6, 7, 10, 11, 12, 13] },
-		{ element: "#equipment-bottom", slots: [15, 16, 17] }
-	];
-	for (const side of invSlotContainers) {
-		for (const slot of side.slots) {
-			const item = charData.equipment.find(item => item.slot === slot);
-			const rel = [];
-			if (item !== undefined) {
-				rel.push("pcs=" + charData.equipment.map(item => item.itemEntry).join(":"));
-				if (item.gems.length !== 0) {
-					rel.push("gems=" + item.gems.join(":"));
-				}
-				if (item.enchantments.length !== 0) {
-					rel.push("ench=" + item.enchantments.join(":"));
-				}
-				if (item.randomPropertyId !== 0) {
-					rel.push("rand=" + item.randomPropertyId);
-				}
-			}
-			createItemSlot(item?.itemEntry, slot, item?.icon?.toLowerCase(), item?.quality, rel.join("&"), side.element);
-		}
-	}
-	const nbItemRows = Math.max($("#equipment-col-left").children().length, $("#equipment-col-right").children().length);
-
-	function onResize(init = false) {
-		const iconSize = $(".icon-size:visible").data("icon-size");
-		const iconSizePx = iconSize === "medium" ? 44 : 68;
-
-		$("#model-container").css("height", (iconSizePx * nbItemRows) + "px");
-
-		$(".item-slot")
-			.removeClass("iconmedium iconlarge")
-			.addClass(`icon${iconSize}`)
-			.each((idx, el) => {
-				const $item = $(el);
-				const item = $item.data("item");
-				const icon = $item.data("icon");
-				const quality = $item.data("quality");
-				if (item !== undefined) {
-					$item.find(".icon").css("background-image", `url("{{aowow}}/static/images/wow/icons/${iconSize}/${icon}.jpg")`);
-				}
-				if (quality !== undefined) {
-					$item.find(".border").css("background-image", `url("{{websiteRoot}}/img/icon-border/${iconSize}/q${quality}.png")`);
-				}
-			});
-
-		if (!init) {
-			characterModel.aspect = $model.outerWidth() / $model.outerHeight();
-			createViewer();
-		}
-	}
-	onResize(true);
-
-	function setMount(mountId) {
-		if (characterModel.mount.id === mountId) {
-			return;
-		}
-
-		if (mountId !== 0) {
-			const mainHand = charData.equipment.find(e => e.slot === 15);
-			const offHand = charData.equipment.find(e => e.slot === 16);
-			const ranged = charData.equipment.find(e => e.slot === 17);
-
-			characterModel.charCustomization.sheathMain = sheathTypes[mainHand.classId][mainHand.subclassId];
-			if (offHand !== undefined) {
-				characterModel.charCustomization.sheathOff = sheathTypes[offHand.classId][offHand.subclassId];
-			} else if (ranged !== undefined) {
-				characterModel.charCustomization.sheathOff = sheathTypes[ranged.classId][ranged.subclassId];
+			if (enabled) {
+				Cookies.remove("disable-3d-viewer");
+				createViewer();
+				$("#3d-viewer-options").slideDown("fast");
 			} else {
+				Cookies.set("disable-3d-viewer", "1");
+				viewer?.destroy();
+				$("#3d-viewer-options").slideUp("fast");
+			}
+		});
+
+		const hideHelm = (charData.flags & 0x0400) === 0x0400;
+		$("#cb-hide-helmet").prop("checked", hideHelm);
+		const hideCloak = (charData.flags & 0x0800) === 0x0800;
+		$("#cb-hide-cloak").prop("checked", hideCloak);
+
+		$("#cb-hide-helmet").change(() => {
+			const hide = $("#cb-hide-helmet").prop("checked");
+			setSlotVisible(1, !hide);
+		});
+		$("#cb-hide-cloak").change(() => {
+			const hide = $("#cb-hide-cloak").prop("checked");
+			setSlotVisible(16, !hide);
+		});
+		$("#cb-hide-tabard").change(() => {
+			const hide = $("#cb-hide-tabard").prop("checked");
+			setSlotVisible(19, !hide);
+		});
+		if (charData.characterModelTransmogs === undefined) {
+			$("#cb-hide-transmogs").parent().hide();
+		}
+		$("#cb-hide-transmogs").change(() => {
+			const hide = $("#cb-hide-transmogs").prop("checked");
+			const items = hide ? charData.characterModelItems : charData.characterModelTransmogs;
+			for (const slot of (items.map((item) => item[0]))) {
+				clearSlots([slot]);
+			}
+
+			const hideHelm = $("#cb-hide-helmet").prop("checked");
+			const hideCloak = $("#cb-hide-cloak").prop("checked");
+			setItems(items.filter(item => !((item[0] === 1 && hideHelm) || (item[0] === 16 && hideCloak))));
+		});
+
+		let viewer;
+		function createViewer() {
+			if (Cookies.get("disable-3d-viewer") === "1") {
+				return;
+			}
+
+			viewer?.destroy();
+			viewer = new ZamModelViewer(characterModel);
+			const isLoadedInterval = setInterval(() => {
+				if (viewer.method("isLoaded")) {
+					clearInterval(isLoadedInterval);
+					setBackground("background.png");
+				}
+			}, 100);
+		}
+
+		function setSlotVisible(slot, visible) {
+			if (visible) {
+				const transmogged = !$("#cb-hide-transmogs").prop("checked");
+				const items = transmogged ? charData.characterModelTransmogs : charData.characterModelItems;
+				const item = items.find(([sl, appearance]) => sl === slot);
+				if (item !== undefined) {
+					setItems([item]);
+				}
+			} else {
+				clearSlots([slot]);
+			}
+		}
+
+		function clearSlots(slots) {
+			viewer.method("clearSlots", slots.join(","));
+			characterModel.items = characterModel.items.filter(item => !slots.includes(item[0]));
+		}
+
+		function setItems(items) {
+			const data = items.map(([slot, display]) => {
+				return {
+					slot,
+					display,
+				};
+			});
+			viewer.method("setItems", [data]);
+
+			characterModel.items = characterModel.items.filter(item => !items.some(item2 => item[0] === item2[0]));
+			characterModel.items.push(...items);
+		}
+
+		function createItemSlot(item, invSlot, icon, quality, rel, container) {
+			const $item = $itemSlotTemplate.clone();
+			$item
+				.data("icon", icon)
+				.data("quality", quality)
+				.find(".inventory-slot")
+				.css("background-image", `url("{{websiteRoot}}/img/inventory-slot/${invSlot}.png")`);
+			if (item !== undefined) {
+				$item.data("item", item);
+				$item.find("a").attr("href", `{{aowow}}/?item=${item}`);
+				$item.find("a").attr("rel", rel);
+			}
+			$item.appendTo($(container));
+		}
+		const invSlotContainers = [
+			{ element: "#equipment-col-left", slots: [0, 1, 2, 14, 4, 3, 18, 8] },
+			{ element: "#equipment-col-right", slots: [9, 5, 6, 7, 10, 11, 12, 13] },
+			{ element: "#equipment-bottom", slots: [15, 16, 17] }
+		];
+		for (const side of invSlotContainers) {
+			for (const slot of side.slots) {
+				const item = charData.equipment.find(item => item.slot === slot);
+				const rel = [];
+				if (item !== undefined) {
+					rel.push("pcs=" + charData.equipment.map(item => item.itemEntry).join(":"));
+					if (item.gems.length !== 0) {
+						rel.push("gems=" + item.gems.join(":"));
+					}
+					if (item.enchantments.length !== 0) {
+						rel.push("ench=" + item.enchantments.join(":"));
+					}
+					if (item.randomPropertyId !== 0) {
+						rel.push("rand=" + item.randomPropertyId);
+					}
+				}
+				createItemSlot(item?.itemEntry, slot, item?.icon?.toLowerCase(), item?.quality, rel.join("&"), side.element);
+			}
+		}
+		const nbItemRows = Math.max($("#equipment-col-left").children().length, $("#equipment-col-right").children().length);
+
+		function onResize(init = false) {
+			const iconSize = $(".icon-size:visible").data("icon-size");
+			const iconSizePx = iconSize === "medium" ? 44 : 68;
+
+			$("#model-container").css("height", (iconSizePx * nbItemRows) + "px");
+
+			$(".item-slot")
+				.removeClass("iconmedium iconlarge")
+				.addClass(`icon${iconSize}`)
+				.each((idx, el) => {
+					const $item = $(el);
+					const item = $item.data("item");
+					const icon = $item.data("icon");
+					const quality = $item.data("quality");
+					if (item !== undefined) {
+						$item.find(".icon").css("background-image", `url("{{aowow}}/static/images/wow/icons/${iconSize}/${icon}.jpg")`);
+					}
+					if (quality !== undefined) {
+						$item.find(".border").css("background-image", `url("{{websiteRoot}}/img/icon-border/${iconSize}/q${quality}.png")`);
+					}
+				});
+
+			if (!init) {
+				characterModel.aspect = $model.outerWidth() / $model.outerHeight();
+				createViewer();
+			}
+		}
+		onResize(true);
+
+		function setMount(mountId) {
+			if (characterModel.mount.id === mountId) {
+				return;
+			}
+
+			if (mountId !== 0) {
+				const mainHand = charData.equipment.find(e => e.slot === 15);
+				const offHand = charData.equipment.find(e => e.slot === 16);
+				const ranged = charData.equipment.find(e => e.slot === 17);
+
+				characterModel.charCustomization.sheathMain = sheathTypes[mainHand.classId][mainHand.subclassId];
+				if (offHand !== undefined) {
+					characterModel.charCustomization.sheathOff = sheathTypes[offHand.classId][offHand.subclassId];
+				} else if (ranged !== undefined) {
+					characterModel.charCustomization.sheathOff = sheathTypes[ranged.classId][ranged.subclassId];
+				} else {
+					characterModel.charCustomization.sheathOff = -1;
+				}
+
+				if (characterModel.charCustomization.sheathMain === undefined) {
+					characterModel.charCustomization.sheathMain = 0;
+				}
+				if (characterModel.charCustomization.sheathOff === undefined) {
+					characterModel.charCustomization.sheathOff = 0;
+				}
+			} else {
+				characterModel.charCustomization.sheathMain = -1;
 				characterModel.charCustomization.sheathOff = -1;
 			}
 
-			if (characterModel.charCustomization.sheathMain === undefined) {
-				characterModel.charCustomization.sheathMain = 0;
+			characterModel.mount.id = mountId;
+			createViewer();
+		}
+
+		function setBackground(file) {
+			if (!viewer) {
+				return;
 			}
-			if (characterModel.charCustomization.sheathOff === undefined) {
-				characterModel.charCustomization.sheathOff = 0;
-			}
+
+			const originalContentPath = viewer.options.contentPath;
+			viewer.options.contentPath = "{{websiteRoot}}/data/";
+			viewer.options.background = file;
+			viewer.renderer.loadBackground();
+			viewer.options.contentPath = originalContentPath;
+		}
+
+		if (charData.mounts.length === 0) {
+			$("#mounts-container").hide();
 		} else {
-			characterModel.charCustomization.sheathMain = -1;
-			characterModel.charCustomization.sheathOff = -1;
-		}
-
-		characterModel.mount.id = mountId;
-		createViewer();
-	}
-
-	function setBackground(file) {
-		if (!viewer) {
-			return;
-		}
-
-		const originalContentPath = viewer.options.contentPath;
-		viewer.options.contentPath = "{{websiteRoot}}/data/";
-		viewer.options.background = file;
-		viewer.renderer.loadBackground();
-		viewer.options.contentPath = originalContentPath;
-	}
-
-	if (charData.mounts.length === 0) {
-		$("#mounts-container").hide();
-	} else {
-		const $dismount = $mountTemplate.clone();
-		$dismount.find(".icon").css("background-image", `url("{{websiteRoot}}/img/UI-GearManager-LeaveItem.png")`);
-		$dismount.find("a")
-			.on("click", () => {
-				setMount(0);
-				return false;
-			});
-		$("#mounts").append($dismount);
-
-		for (const mount of charData.mounts) {
-			const $mount = $mountTemplate.clone();
-			$mount.find(".icon").css("background-image", `url("{{aowow}}/static/images/wow/icons/medium/${mount.icon}.jpg")`);
-			$mount.find("a")
-				.attr("href", `{{aowow}}/?spell=${mount.spell}`)
+			const $dismount = $mountTemplate.clone();
+			$dismount.find(".icon").css("background-image", `url("{{websiteRoot}}/img/UI-GearManager-LeaveItem.png")`);
+			$dismount.find("a")
 				.on("click", () => {
-					setMount(mount.creatureDisplayId);
+					setMount(0);
 					return false;
 				});
-			$("#mounts").append($mount);
+			$("#mounts").append($dismount);
+
+			for (const mount of charData.mounts) {
+				const $mount = $mountTemplate.clone();
+				$mount.find(".icon").css("background-image", `url("{{aowow}}/static/images/wow/icons/medium/${mount.icon}.jpg")`);
+				$mount.find("a")
+					.attr("href", `{{aowow}}/?spell=${mount.spell}`)
+					.on("click", () => {
+						setMount(mount.creatureDisplayId);
+						return false;
+					});
+				$("#mounts").append($mount);
+			}
 		}
-	}
-	$("#btn-mounts").on("click", () => {
-		$("#mounts").slideToggle("fast");
-	});
+		$("#btn-mounts").on("click", () => {
+			$("#mounts").slideToggle("fast");
+		});
 
-	const sheathTypes = {
-		2: {
-			// One handed weapons
-			0: 3,
-			4: 3,
-			7: 3,
-			14: 3,
-			15: 3,
-			17: 3,
-			20: 3,
+		const sheathTypes = {
+			2: {
+				// One handed weapons
+				0: 3,
+				4: 3,
+				7: 3,
+				14: 3,
+				15: 3,
+				17: 3,
+				20: 3,
 
-			// Two handed weapons
-			1: 1,
-			5: 1,
-			8: 1,
+				// Two handed weapons
+				1: 1,
+				5: 1,
+				8: 1,
 
-			// Others
-			10: 2, // Staff
-			6: 1, // Polearm
-			2: 4, // Bow
-			3: 4, // Gun
-			18: 4, // Crossbow
-			13: 0, // Fist weapons
-			19: 3, // Wand
-			20: 1, // Fishing pole
-		},
-		4: {
-			0: 3, // Held in off-hand
-			6: 9, // Shield
-		},
-	};
-
-	const characterModel = {
-		type: ZamModelViewer.WOW,
-		contentPath: "{{ contentPath }}",
-		container: $model,
-		hd: true,
-		aspect: $model.outerWidth() / $model.outerHeight(),
-		charCustomization: {
-			race: charData.race,
-			gender: charData.gender,
-			options: charData.customizationOptions,
-			sheathMain: -1,
-			sheathOff: -1,
-		},
-		cls: charData.class,
-		items: (charData.characterModelTransmogs ?? charData.characterModelItems).filter(item => !((item[0] === 1 && hideHelm) || (item[0] === 16 && hideCloak))),
-		models: {
-			type: ZamModelViewer.Wow.Types.CHARACTER,
-			id: `${races[charData.race]}${genders[charData.gender]}`,
-		},
-		mount: {
-			type: ZamModelViewer.Wow.Types.NPC,
-			id: 0,
-		},
-	};
-	createViewer();
-
-	function debounce(func, timeout) {
-		let timer;
-		return (...args) => {
-			clearTimeout(timer);
-			timer = setTimeout(() => { func.apply(this, args); }, timeout);
+				// Others
+				10: 2, // Staff
+				6: 1, // Polearm
+				2: 4, // Bow
+				3: 4, // Gun
+				18: 4, // Crossbow
+				13: 0, // Fist weapons
+				19: 3, // Wand
+				20: 1, // Fishing pole
+			},
+			4: {
+				0: 3, // Held in off-hand
+				6: 9, // Shield
+			},
 		};
-	}
 
-	let windowWidth = $(window).width();
-	$(window).resize(debounce(() => {
-		const newWidth = $(window).width();
-		if (windowWidth === newWidth) {
-			// Do nothing if only the height changed.
-			// This prevents triggering a resize when the navigation bar moves on mobile when scrolling.
-			return;
+		const characterModel = {
+			type: ZamModelViewer.WOW,
+			contentPath: "{{ contentPath }}",
+			container: $model,
+			hd: true,
+			aspect: $model.outerWidth() / $model.outerHeight(),
+			charCustomization: {
+				race: charData.race,
+				gender: charData.gender,
+				options: charData.customizationOptions,
+				sheathMain: -1,
+				sheathOff: -1,
+			},
+			cls: charData.class,
+			items: (charData.characterModelTransmogs ?? charData.characterModelItems).filter(item => !((item[0] === 1 && hideHelm) || (item[0] === 16 && hideCloak))),
+			models: {
+				type: ZamModelViewer.Wow.Types.CHARACTER,
+				id: `${races[charData.race]}${genders[charData.gender]}`,
+			},
+			mount: {
+				type: ZamModelViewer.Wow.Types.NPC,
+				id: 0,
+			},
+		};
+		createViewer();
+
+		function debounce(func, timeout) {
+			let timer;
+			return (...args) => {
+				clearTimeout(timer);
+				timer = setTimeout(() => { func.apply(this, args); }, timeout);
+			};
 		}
-		windowWidth = newWidth;
-		onResize();
-	}, 500));
+
+		let windowWidth = $(window).width();
+		$(window).resize(debounce(() => {
+			const newWidth = $(window).width();
+			if (windowWidth === newWidth) {
+				// Do nothing if only the height changed.
+				// This prevents triggering a resize when the navigation bar moves on mobile when scrolling.
+				return;
+			}
+			windowWidth = newWidth;
+			onResize();
+		}, 500));
+	});
 </script>
