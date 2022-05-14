@@ -3,17 +3,15 @@ const fsp = fs.promises;
 import * as path from "path";
 
 import * as pako from "pako";
-import fetch from "node-fetch";
 import * as mkdirp from "mkdirp";
 import * as glob from "glob-promise";
-import { Response } from "node-fetch";
+import "source-map-support/register";
 import * as prettyMs from "pretty-ms";
 import * as cliProgress from "cli-progress";
+import fetch, { Response } from "node-fetch";
 import promisepool = require("@supercharge/promise-pool");
 
 import { DbcManager, IItemAppearanceDbc, IItemModifiedAppearanceDbc, IMountDbc, IMountXDisplayDbc } from "../armory/data/DbcReader";
-
-require("source-map-support").install();
 
 const baseUrl = "https://wow.zamimg.com/modelviewer/live";
 
@@ -92,38 +90,34 @@ const modelsDownloadQueue = new Set<number>();
 const texturesDownloadQueue = new Set<number>();
 const bonesDownloadQueue = new Set<number>();
 
-async function download(dir: string, file: string): Promise<string | any> {
+async function download(dir: string, file: string): Promise<string | unknown> {
 	const dataDir = path.join(process.cwd(), "data");
 	const fullPath = `${dir}/${file}`;
 
-	try {
-		const res = await fetch(`${baseUrl}/${fullPath}`);
-		if (res.status !== 200) {
-			throw new HttpRequestError(res);
-		}
+	const res = await fetch(`${baseUrl}/${fullPath}`);
+	if (res.status !== 200) {
+		throw new HttpRequestError(res);
+	}
 
-		await mkdirp(path.join(dataDir, dir));
+	await mkdirp(path.join(dataDir, dir));
 
-		if (res.headers.get("Content-Type") === "application/json") {
-			const json = await res.json();
-			fsp.writeFile(path.join(dataDir, fullPath), JSON.stringify(json));
-			return json;
-		} else {
-			const fileStream = fs.createWriteStream(path.join(dataDir, fullPath));
-			await new Promise((resolve, rej) => {
-				res.body.pipe(fileStream);
-				res.body.on("error", rej);
-				fileStream.on("finish", resolve);
-			});
+	if (res.headers.get("Content-Type") === "application/json") {
+		const json = await res.json();
+		fsp.writeFile(path.join(dataDir, fullPath), JSON.stringify(json));
+		return json;
+	} else {
+		const fileStream = fs.createWriteStream(path.join(dataDir, fullPath));
+		await new Promise((resolve, rej) => {
+			res.body.pipe(fileStream);
+			res.body.on("error", rej);
+			fileStream.on("finish", resolve);
+		});
 
-			return fileStream.path.toString();
-		}
-	} catch (err) {
-		throw err;
+		return fileStream.path.toString();
 	}
 }
 
-function queueTexturesAndModels(item: any): void {
+function queueTexturesAndModels(item): void {
 	if (item.TextureFiles !== null) {
 		for (const file in Object.values(item.TextureFiles)) {
 			if (file["FileDataId"] !== 0) {
@@ -172,10 +166,10 @@ async function downloadRaces(): Promise<void> {
 		.withConcurrency(4)
 		.process(async (race) => {
 			const characterJson = await download("meta/character", `${race}.json`);
-			modelsDownloadQueue.add(characterJson.Model);
+			modelsDownloadQueue.add(characterJson["Model"]);
 
-			const customizationJson = await download("meta/charactercustomization2", `${characterJson.Race}_${characterJson.Gender}.json`);
-			for (const option of customizationJson.Options) {
+			const customizationJson = await download("meta/charactercustomization2", `${characterJson["Race"]}_${characterJson["Gender"]}.json`);
+			for (const option of customizationJson["Options"]) {
 				for (const choice of option.Choices) {
 					for (const element of choice.Elements) {
 						if (
@@ -192,7 +186,7 @@ async function downloadRaces(): Promise<void> {
 				}
 			}
 
-			const textureFiles = Object.values(customizationJson.TextureFiles).flat();
+			const textureFiles = Object.values(customizationJson["TextureFiles"]).flat();
 			for (const file of textureFiles) {
 				texturesDownloadQueue.add(file["FileDataId"]);
 			}
@@ -255,7 +249,7 @@ async function downloadWeapons(): Promise<void> {
 			}
 			const appearance = dbcItemAppearanceById[modifiedAppearance.itemAppearanceId];
 			try {
-				const itemJson = await download(`meta/item`, `${appearance.itemDisplayInfoId}.json`);
+				const itemJson = await download("meta/item", `${appearance.itemDisplayInfoId}.json`);
 				queueTexturesAndModels(itemJson);
 				progress.increment();
 			} catch (err) {

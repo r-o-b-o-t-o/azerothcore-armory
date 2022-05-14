@@ -1,0 +1,33 @@
+{
+	"env": {
+		"es2021": true
+	},
+	"extends": ["eslint:recommended", "plugin:@typescript-eslint/recommended"],
+	"parser": "@typescript-eslint/parser",
+	"plugins": ["@typescript-eslint"],
+	"rules": {
+		"semi": ["error", "always"],
+		"@typescript-eslint/no-unused-vars": [
+			"warn",
+			{
+				"args": "none"
+			}
+		],
+		"no-duplicate-imports": "warn",
+		"no-promise-executor-return": "warn",
+		"quote-props": ["warn", "as-needed"],
+		"indent": "off",
+		"@typescript-eslint/indent": [
+			"error",
+			"tab",
+			{
+				"ignoredNodes": [
+					"FunctionExpression > .params[decorators.length > 0]",
+					"FunctionExpression > .params > :matches(Decorator, :not(:first-child))",
+					"ClassBody.body > PropertyDefinition[decorators.length > 0] > .key"
+				],
+				"SwitchCase": 1
+			}
+		]
+	}
+}

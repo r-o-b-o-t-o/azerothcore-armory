@@ -41,7 +41,16 @@ export class Utils {
 		return [1, 3, 4, 7, 11].includes(race) ? EFaction.Alliance : EFaction.Horde;
 	}
 
-	public static makeEmblemObject(obj: any, padWithZeroes: boolean = true): IEmblem {
+	public static makeEmblemObject(
+		obj: {
+			background: number;
+			emblemStyle: number;
+			emblemColor: number;
+			borderStyle: number;
+			borderColor: number;
+		},
+		padWithZeroes = true,
+	): IEmblem {
 		const padLength = padWithZeroes ? 2 : 0;
 		return {
 			icon: obj.emblemStyle.toString().padStart(padLength, "0"),

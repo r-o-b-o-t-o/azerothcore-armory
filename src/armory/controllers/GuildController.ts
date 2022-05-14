@@ -2,14 +2,23 @@ import * as express from "express";
 import { encode } from "html-entities";
 import { RowDataPacket } from "mysql2/promise";
 
-import { Utils } from "../Utils";
 import { Armory } from "../Armory";
 import { IRealmConfig } from "../Config";
 import { DataTablesSsp } from "../DataTablesSsp";
+import { Utils, IEmblem, EFaction } from "../Utils";
 
 interface IGuildRank {
 	id: number;
 	name: string;
+}
+
+interface IGuildData {
+	id: number;
+	name: string;
+	leader: string;
+	faction: EFaction;
+	emblem: IEmblem;
+	membersCount: number;
 }
 
 export class GuildController {
@@ -87,17 +96,20 @@ export class GuildController {
 		const result = await ssp.where("`guildid` = ?", guildId).where("`deleteInfos_Account` IS NULL").run(this.armory.config.dbQueryTimeout);
 
 		const ranks = await this.getGuildRanks(realm, guildId);
-		(result as any).ranks = {};
+		const ranksObj: { [key: number]: string } = {};
 		for (const rank of ranks) {
-			(result as any).ranks[rank.id] = encode(rank.name);
+			ranksObj[rank.id] = encode(rank.name);
 		}
 
-		res.json(result);
+		res.json({
+			...result,
+			ranks: ranksObj,
+		});
 	}
 
-	private async getGuildData(realm: IRealmConfig, name: string): Promise<any> {
+	private async getGuildData(realm: IRealmConfig, name: string): Promise<IGuildData> {
 		const db = this.armory.getCharactersDb(realm.name);
-		let [rows, fields] = await db.query({
+		let [rows] = await db.query({
 			sql: `
 				SELECT guildid, name, leaderguid, EmblemStyle AS emblemStyle, EmblemColor AS emblemColor, BorderStyle AS borderStyle, BorderColor AS borderColor, BackgroundColor AS background
 				FROM guild WHERE name = ?
@@ -110,7 +122,7 @@ export class GuildController {
 		}
 		const guild = rows[0];
 
-		[rows, fields] = await db.query({
+		[rows] = await db.query({
 			sql: `
 				SELECT name, race FROM characters
 				WHERE guid = ?
@@ -120,7 +132,7 @@ export class GuildController {
 		});
 		const leader = rows[0];
 
-		[rows, fields] = await db.query({
+		[rows] = await db.query({
 			sql: `
 				SELECT COUNT(guid) AS \`count\` FROM guild_member
 				WHERE guildid = ?
@@ -142,7 +154,7 @@ export class GuildController {
 
 	private async getGuildId(realm: IRealmConfig, name: string): Promise<number> {
 		const db = this.armory.getCharactersDb(realm.name);
-		const [rows, fields] = await db.query({
+		const [rows] = await db.query({
 			sql: `
 				SELECT guildid
 				FROM guild WHERE name = ?
@@ -159,7 +171,7 @@ export class GuildController {
 
 	private async guildExists(realm: IRealmConfig, id: number): Promise<boolean> {
 		const db = this.armory.getCharactersDb(realm.name);
-		const [rows, fields] = await db.query({
+		const [rows] = await db.query({
 			sql: `
 				SELECT guildid
 				FROM guild WHERE guildid
@@ -173,7 +185,7 @@ export class GuildController {
 
 	private async getGuildRanks(realm: IRealmConfig, id: number): Promise<IGuildRank[]> {
 		const db = this.armory.getCharactersDb(realm.name);
-		const [rows, fields] = await db.query({
+		const [rows] = await db.query({
 			sql: `
 				SELECT rid AS id, rname AS name
 				FROM guild_rank WHERE guildid = ?

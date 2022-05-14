@@ -1,10 +1,10 @@
 import * as express from "express";
 import { RowDataPacket } from "mysql2/promise";
 
-import { Utils } from "../Utils";
 import { Armory } from "../Armory";
 import { IRealmConfig } from "../Config";
-import { IAchievement } from "../data/DbcReader";
+import { IEmblem, Utils } from "../Utils";
+import { IAchievement as IAchievementDbc } from "../data/DbcReader";
 
 interface ICharacterData {
 	guid: number;
@@ -27,12 +27,14 @@ interface IEquipmentData {
 	slot: number;
 	itemEntry: number;
 	flags: number;
-	enchantments: string;
+	enchantments: string | number[];
 	randomPropertyId: number;
 	classId: number;
 	subclassId: number;
 	quality: number;
 	transmog?: number;
+	icon?: number;
+	gems?: number[];
 }
 
 interface ICustomizationOption {
@@ -44,6 +46,30 @@ interface IMount {
 	creatureDisplayId: number;
 	spell: number;
 	icon: string;
+}
+
+interface IAchievement {
+	id: number;
+	category: number;
+	title: string;
+	description: string;
+	points: number;
+	icon: string;
+}
+
+interface IArenaTeam {
+	id: number;
+	name: string;
+	type: number;
+	rating: number;
+	seasonWins: number;
+	seasonGames: number;
+	background: number;
+	emblemStyle: number;
+	emblemColor: number;
+	borderStyle: number;
+	borderColor: number;
+	emblem?: IEmblem;
 }
 
 const ItemClassGem = 3;
@@ -82,7 +108,7 @@ export class CharacterController {
 	private itemSocketBonuses: { [key: number]: number };
 	private mountSpells: number[];
 	private mountBySpellId: { [key: number]: IMount };
-	private achievementById: { [key: number]: IAchievement };
+	private achievementById: { [key: number]: IAchievementDbc };
 
 	public constructor(armory: Armory) {
 		this.armory = armory;
@@ -121,7 +147,7 @@ export class CharacterController {
 		}
 
 		this.itemSocketBonuses = {};
-		const [rows, fields] = await this.armory.worldDb.query({
+		const [rows] = await this.armory.worldDb.query({
 			sql: "SELECT entry, socketBonus FROM item_template WHERE socketBonus <> 0",
 			timeout: this.armory.config.dbQueryTimeout,
 		});
@@ -175,9 +201,9 @@ export class CharacterController {
 		const equipmentData = await this.getEquipmentData(realmName, charData.guid);
 		const customization = this.getCustomizationOptions(charData);
 		const equipment = equipmentData.map((row) => {
-			(row as any).icon = this.itemIcons[row.itemEntry];
-			(row as any).gems = this.getGemsFromEnchantments(row.enchantments);
-			(row as any).enchantments = this.filterEnchantments(row.itemEntry, row.enchantments);
+			row.icon = this.itemIcons[row.itemEntry];
+			row.gems = this.getGemsFromEnchantments(row.enchantments as string);
+			row.enchantments = this.filterEnchantments(row.itemEntry, row.enchantments as string);
 			return row;
 		});
 		const mounts = await this.getMounts(realmName, charData.guid);
@@ -314,7 +340,7 @@ export class CharacterController {
 
 	private async getCharacterData(realm: IRealmConfig, character: string | number): Promise<ICharacterData> {
 		const where = typeof character === "string" ? "LOWER(`characters`.`name`) = LOWER(?)" : "`characters`.`guid` = ?";
-		const [rows, fields] = await this.armory.getCharactersDb(realm.name).query({
+		const [rows] = await this.armory.getCharactersDb(realm.name).query({
 			sql: `
 				SELECT \`characters\`.\`guid\`, \`characters\`.\`name\`, \`race\`, \`class\`, \`gender\`, \`level\`, \`skin\`, \`face\`, \`hairStyle\`, \`hairColor\`, \`facialStyle\`, \`playerFlags\`, \`online\`, \`guild\`.\`name\` AS \`guild\`
 				FROM \`characters\`
@@ -337,8 +363,10 @@ export class CharacterController {
 
 	private async getEquipmentData(realm: string, charGuid: number): Promise<IEquipmentData[]> {
 		const transmogSelect = this.armory.config.transmogModule ? ", custom_transmogrification.FakeEntry AS transmog" : "";
-		const transmogJoin = this.armory.config.transmogModule ? "LEFT JOIN custom_transmogrification ON custom_transmogrification.GUID = item_instance.guid" : "";
-		let [rows, fields] = await this.armory.getCharactersDb(realm).query({
+		const transmogJoin = this.armory.config.transmogModule
+			? "LEFT JOIN custom_transmogrification ON custom_transmogrification.GUID = item_instance.guid"
+			: "";
+		let [rows] = await this.armory.getCharactersDb(realm).query({
 			sql: `
 				SELECT
 					character_inventory.slot, item_instance.itemEntry, item_instance.flags, item_instance.enchantments, item_instance.randomPropertyId
@@ -360,7 +388,7 @@ export class CharacterController {
 			row.subclassId = item.subclassId;
 		}
 
-		[rows, fields] = await this.armory.worldDb.query({
+		[rows] = await this.armory.worldDb.query({
 			sql: "SELECT entry, quality FROM item_template WHERE entry IN (?)",
 			values: [data.map((row) => row.itemEntry)],
 			timeout: this.armory.config.dbQueryTimeout,
@@ -374,7 +402,7 @@ export class CharacterController {
 	}
 
 	private async getMounts(realm: string, charGuid: number): Promise<IMount[]> {
-		const [rows, fields] = await this.armory.getCharactersDb(realm).query({
+		const [rows] = await this.armory.getCharactersDb(realm).query({
 			sql: `
 				SELECT spell
 				FROM character_spell
@@ -455,7 +483,7 @@ export class CharacterController {
 		const data = this.armory.characterCustomization.getCharacterCustomizationData(charData.race, charData.gender);
 		const options = [];
 		const setOptionByChoiceIndex = (optionName: string, choiceIndex: number) => {
-			const option = data.Options.find((opt) => opt.Name === optionName);
+			const option = data["Options"].find((opt) => opt.Name === optionName);
 			if (option !== undefined) {
 				const choice = option.Choices.find((choice) => choice.OrderIndex === choiceIndex);
 				if (choice !== undefined) {
@@ -464,7 +492,7 @@ export class CharacterController {
 			}
 		};
 		const setOptionByChoiceName = (optionName: string, choiceName: string) => {
-			const option = data.Options.find((opt) => opt.Name === optionName);
+			const option = data["Options"].find((opt) => opt.Name === optionName);
 			if (option !== undefined) {
 				const choice = option.Choices.find((ch) => ch.Name === choiceName);
 				if (choice !== undefined) {
@@ -473,7 +501,7 @@ export class CharacterController {
 			}
 		};
 		const setOptionByChoiceId = (optionName: string, choiceId: number) => {
-			const option = data.Options.find((opt) => opt.Name === optionName);
+			const option = data["Options"].find((opt) => opt.Name === optionName);
 			if (option !== undefined) {
 				options.push({ optionId: option.Id, choiceId: choiceId });
 			}
@@ -907,7 +935,7 @@ export class CharacterController {
 	}
 
 	private async getTalents(realm: string, character: number): Promise<number[][]> {
-		const [rows, fields] = await this.armory.getCharactersDb(realm).query({
+		const [rows] = await this.armory.getCharactersDb(realm).query({
 			sql: `
 				SELECT spell, specMask
 				FROM character_talent
@@ -959,8 +987,8 @@ export class CharacterController {
 		return texturePath.toLowerCase().replace("interface\\icons\\", "").replace("interface\\spellbook\\", "").replace(/\.$/, "");
 	}
 
-	private async getGlyphs(realm: string, character: number): Promise<any[][]> {
-		const [rows, fields] = await this.armory.getCharactersDb(realm).query({
+	private async getGlyphs(realm: string, character: number): Promise<number[][]> {
+		const [rows] = await this.armory.getCharactersDb(realm).query({
 			sql: `
 				SELECT guid, talentGroup, glyph1, glyph2, glyph3, glyph4, glyph5, glyph6
 				FROM character_glyphs
@@ -970,7 +998,7 @@ export class CharacterController {
 			timeout: this.armory.config.dbQueryTimeout,
 		});
 
-		const glyphs = [[], []];
+		const glyphs: number[][] = [[], []];
 		for (const row of rows as RowDataPacket[]) {
 			const glyphIds = [row.glyph1, row.glyph2, row.glyph3, row.glyph4, row.glyph5, row.glyph6].filter((id) => id !== 0);
 			for (const glyphId of glyphIds) {
@@ -985,7 +1013,10 @@ export class CharacterController {
 		return glyphs;
 	}
 
-	private async getAchievements(realm: string, charData: ICharacterData): Promise<{ achievements: any[]; earned: { [key: number]: any } }> {
+	private async getAchievements(
+		realm: string,
+		charData: ICharacterData,
+	): Promise<{ achievements: IAchievement[]; earned: { [key: number]: number } }> {
 		const promises = await this.armory.dbc
 			.achievement()
 			.filter((ach) => ach.faction === -1 || ach.faction === Utils.getFactionFromRaceId(charData.race))
@@ -1003,7 +1034,7 @@ export class CharacterController {
 			.toArray();
 		const achievements = await Promise.all(promises);
 
-		const [rows, fields] = await this.armory.getCharactersDb(realm).query({
+		const [rows] = await this.armory.getCharactersDb(realm).query({
 			sql: `
 				SELECT achievement, date
 				FROM character_achievement
@@ -1012,11 +1043,9 @@ export class CharacterController {
 			values: [charData.guid],
 			timeout: this.armory.config.dbQueryTimeout,
 		});
-		const earned = {};
+		const earned: { [key: number]: number } = {};
 		for (const row of rows as RowDataPacket[]) {
-			earned[row.achievement] = {
-				date: row.date,
-			};
+			earned[row.achievement] = row.date;
 		}
 
 		return {
@@ -1026,7 +1055,7 @@ export class CharacterController {
 	}
 
 	private async getPvpKills(realm: string, charGuid: number): Promise<{ total: number; today: number; yesterday: number }> {
-		const [rows, fields] = await this.armory.getCharactersDb(realm).query({
+		const [rows] = await this.armory.getCharactersDb(realm).query({
 			sql: `
 				SELECT totalKills, todayKills, yesterdayKills
 				FROM characters
@@ -1044,8 +1073,8 @@ export class CharacterController {
 		};
 	}
 
-	private async getArenaTeams(realm: string, charGuid: number): Promise<any[]> {
-		const [rows, fields] = await this.armory.getCharactersDb(realm).query({
+	private async getArenaTeams(realm: string, charGuid: number): Promise<IArenaTeam[]> {
+		const [rows] = await this.armory.getCharactersDb(realm).query({
 			sql: `
 				SELECT
 					arena_team.arenaTeamId AS id, arena_team.name, arena_team.type, arena_team.rating, arena_team.seasonWins, arena_team.seasonGames,
@@ -1059,7 +1088,7 @@ export class CharacterController {
 			timeout: this.armory.config.dbQueryTimeout,
 		});
 
-		return (rows as RowDataPacket[]).map((row) => {
+		return (rows as IArenaTeam[]).map((row) => {
 			row.emblem = Utils.makeEmblemObject(row, false);
 			return row;
 		});

@@ -117,8 +117,7 @@
 		$achievement.find("a").attr("href", `{{aowow}}?achievement=${achievement.id}`);
 
 		if (isEarned) {
-			const earned = achievementsData.earned[achievement.id];
-			const date = new Date(earned.date * 1000);
+			const date = new Date(achievementsData.earned[achievement.id] * 1000);
 			$achievement.find(".earned-date").text(date.toLocaleDateString());
 			$achievement.addClass("earned");
 		}

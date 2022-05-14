@@ -219,10 +219,13 @@ class DbcReader<T> {
 			return;
 		}
 
-		const headerCols = headerLine.value.map((header) => camelCase(header).replace(/[\[\]]/g, ""));
+		const headerCols = headerLine.value.map((header) => camelCase(header).replace(/[[\]]/g, ""));
 
 		for await (const arr of itr) {
-			const cols = arr.map((value) => (isNaN(value as any) ? value : parseInt(value, 10)));
+			const cols = arr.map((value) => {
+				const parsed = parseInt(value, 10);
+				return isNaN(parsed) ? value : parsed;
+			});
 			const row = {};
 			headerCols.forEach((header, headerIdx) => {
 				if (this.fields.length === 0 || this.fields.includes(header)) {
@@ -243,8 +246,8 @@ class DbcReader<T> {
 			const str = chunk.toString();
 			// Iterate over each character, keep track of current column (of the returned array)
 			for (let c = 0; c < str.length; ++c) {
-				let ch = str[c],
-					nch = str[c + 1]; // Current character, next character
+				const ch = str[c];
+				const nch = str[c + 1]; // Current character, next character
 				if (!(col in arr)) {
 					arr[col] = ""; // Create a new column (start with empty string) if necessary
 				}

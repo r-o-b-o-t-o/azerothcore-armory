@@ -1,17 +1,17 @@
-import { Pool } from "mysql2/promise";
+import { Pool, RowDataPacket } from "mysql2/promise";
 import { Query } from "express-serve-static-core";
 
 export interface IResult {
 	recordsTotal: number;
 	recordsFiltered: number;
 	draw: number;
-	data: any[][];
+	data: unknown[][];
 }
 
 export interface IColumnSettings {
 	name: string;
 	collation?: string;
-	formatter?: (data: string | number | null, row: any) => string;
+	formatter?: (data: string | number | null, row: unknown) => string;
 	table?: string;
 	database?: string;
 }
@@ -60,11 +60,11 @@ export class DataTablesSsp {
 	private wheres: string[] = [];
 	private filterBindings: (string | number)[] = [];
 	private customBindings: (string | number)[] = [];
-	private filterWhereSql: string = "1";
-	private customWhereSql: string = "1";
-	private limitSql: string = "";
-	private orderSql: string = "";
-	private joinSql: string = "";
+	private filterWhereSql = "1";
+	private customWhereSql = "1";
+	private limitSql = "";
+	private orderSql = "";
+	private joinSql = "";
 
 	public constructor(query: Query, db: Pool, table: string, primaryKey: string, columnSettings: IColumnSettings[]) {
 		this.start = parseInt(query.start as string, 10);
@@ -73,7 +73,9 @@ export class DataTablesSsp {
 		this._order = (query.order as { column: string; dir: string }[]).map((order) => {
 			return { column: parseInt(order.column, 10), dir: order.dir };
 		});
-		this.columns = (query.columns as { data: string; name: string; searchable: string; orderable: string; search: any }[]).map((column) => {
+		this.columns = (
+			query.columns as { data: string; name: string; searchable: string; orderable: string; search: { value: string; regex: string } }[]
+		).map((column) => {
 			return {
 				data: parseInt(column.data, 10),
 				name: column.name,
@@ -83,8 +85,8 @@ export class DataTablesSsp {
 			};
 		});
 		this.search = {
-			value: (query.search as any).value as string,
-			regex: (query.search as any).regex === "true",
+			value: (query.search as unknown)["value"] as string,
+			regex: (query.search as unknown)["regex"] === "true",
 		};
 
 		this.db = db;
@@ -197,32 +199,32 @@ export class DataTablesSsp {
 		`;
 	}
 
-	public async run(queryTimeout: number = 10_000): Promise<IResult> {
+	public async run(queryTimeout = 10_000): Promise<IResult> {
 		this.limit().order().join().filter();
 
 		const bindings = [...this.filterBindings, ...this.customBindings];
 
-		let [rows, fields] = await this.db.query({
+		let [rows] = await this.db.query({
 			sql: this.buildTotalCountSql(),
 			values: this.customBindings,
 			timeout: queryTimeout,
 		});
 		const recordsTotal = rows[0].count;
 
-		[rows, fields] = await this.db.query({
+		[rows] = await this.db.query({
 			sql: this.buildFilteredCountSql(),
 			values: bindings,
 			timeout: queryTimeout,
 		});
 		const recordsFiltered = rows[0].count;
 
-		[rows, fields] = await this.db.query({
+		[rows] = await this.db.query({
 			sql: this.sql(),
 			rowsAsArray: true,
 			values: bindings,
 			timeout: queryTimeout,
 		});
-		rows = (rows as any[][]).map((row) => {
+		rows = (rows as RowDataPacket[]).map((row) => {
 			for (let i = 0; i < this.columnSettings.length; ++i) {
 				const col = this.columnSettings[i];
 				if (col.formatter !== undefined) {
@@ -236,7 +238,7 @@ export class DataTablesSsp {
 			recordsTotal,
 			recordsFiltered,
 			draw: this.draw,
-			data: rows,
+			data: rows as unknown[][],
 		};
 	}
 

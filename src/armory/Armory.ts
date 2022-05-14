@@ -98,6 +98,7 @@ export class Armory {
 				layoutsDir: path.join(process.cwd(), "static"),
 				defaultLayout: "layout.hbs",
 				helpers: {
+					// eslint-disable-next-line @typescript-eslint/no-var-requires
 					...require("handlebars-helpers")(),
 				},
 			}),
@@ -131,14 +132,14 @@ export class Armory {
 			}),
 		);
 
-		app.use("/js", express.static(`static/js`));
-		app.use("/css", express.static(`static/css`));
-		app.use("/img", express.static(`static/img`));
-		app.use("/data/mo3", express.static(`data/mo3`));
-		app.use("/data/meta", express.static(`data/meta`));
-		app.use("/data/bone", express.static(`data/bone`));
-		app.use("/data/textures", express.static(`data/textures`));
-		app.use("/data/background.png", express.static(`data/modelviewer-background.png`));
+		app.use("/js", express.static("static/js"));
+		app.use("/css", express.static("static/css"));
+		app.use("/img", express.static("static/img"));
+		app.use("/data/mo3", express.static("data/mo3"));
+		app.use("/data/meta", express.static("data/meta"));
+		app.use("/data/bone", express.static("data/bone"));
+		app.use("/data/textures", express.static("data/textures"));
+		app.use("/data/background.png", express.static("data/modelviewer-background.png"));
 
 		const indexController = new IndexController(this);
 		app.get("/", this.wrapRoute(indexController.index.bind(indexController)));
@@ -208,7 +209,7 @@ export class Armory {
 		const db = this.getCharactersDb(realm);
 
 		if (!(realm in this.charsetCache)) {
-			const [rows, fields] = await db.query({
+			const [rows] = await db.query({
 				sql: `
 					SELECT CCSA.character_set_name AS charset FROM information_schema.\`TABLES\` T,
 					information_schema.\`COLLATION_CHARACTER_SET_APPLICABILITY\` CCSA
@@ -235,7 +236,7 @@ export class Armory {
 		}, 500);
 	}
 
-	private wrapRoute(fn: (req: express.Request, res: express.Response, next: express.NextFunction) => Promise<any>) {
+	private wrapRoute(fn: (req: express.Request, res: express.Response, next: express.NextFunction) => Promise<void>) {
 		// Adds error handling for promise-based controller methods
 		return async (req: express.Request, res: express.Response, next: express.NextFunction) => {
 			try {

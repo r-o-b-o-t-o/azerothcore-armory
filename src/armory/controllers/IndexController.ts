@@ -56,8 +56,10 @@ export class IndexController {
 		}
 
 		const result = await ssp.where("`deleteInfos_Account` IS NULL").run(this.armory.config.dbQueryTimeout);
-		(result as any).realm = realm.name;
 
-		res.json(result);
+		res.json({
+			...result,
+			realm: realm.name,
+		});
 	}
 }

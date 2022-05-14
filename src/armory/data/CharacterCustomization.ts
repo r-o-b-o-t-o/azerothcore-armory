@@ -3,7 +3,7 @@ const fsp = fs.promises;
 import * as path from "path";
 
 export class CharacterCustomization {
-	private data: { [key: number]: { [key: number]: any } };
+	private data: { [key: number]: { [key: number]: unknown } };
 
 	public async loadData(): Promise<void> {
 		this.data = {};
@@ -21,7 +21,7 @@ export class CharacterCustomization {
 		}
 	}
 
-	public getCharacterCustomizationData(race: number, gender: number): any {
+	public getCharacterCustomizationData(race: number, gender: number): unknown {
 		return this.data[race][gender];
 	}
 }

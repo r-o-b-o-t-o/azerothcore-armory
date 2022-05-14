@@ -36,8 +36,8 @@ export class Config {
 	public worldDatabase: IDatabaseConfig;
 	public dbQueryTimeout: number;
 
-	private static envPrefix: string = "ACORE_ARMORY";
-	private static checkedMissingField: boolean = false;
+	private static envPrefix = "ACORE_ARMORY";
+	private static checkedMissingField = false;
 
 	public static async load(logger: winston.Logger): Promise<Config> {
 		try {
@@ -71,13 +71,13 @@ export class Config {
 		return config as Config;
 	}
 
-	private static loadObjFromEnv(logger: winston.Logger, obj: object, model: object, parentName: string = "") {
+	private static loadObjFromEnv(logger: winston.Logger, obj: object, model: object, parentName = "") {
 		if (parentName !== "") {
 			parentName += ".";
 		}
 
 		for (const field in model) {
-			if (!model.hasOwnProperty(field)) {
+			if (!Object.hasOwnProperty.call(model, field)) {
 				continue;
 			}
 
@@ -86,9 +86,9 @@ export class Config {
 			} else if (typeof model[field] === "object") {
 				obj[field] = {};
 				Config.loadObjFromEnv(logger, obj[field], model[field], parentName + field);
-			} else if (!obj.hasOwnProperty(field)) {
+			} else if (!Object.hasOwnProperty.call(obj, field)) {
 				const key = Config.getEnvKey(parentName + field);
-				if (process.env.hasOwnProperty(key)) {
+				if (Object.hasOwnProperty.call(process.env, key)) {
 					obj[field] = Config.parseEnvValue(process.env[key], model[field]);
 				} else if (!Config.checkedMissingField) {
 					logger.warn(`Config field ${key} is missing from .env!`);
@@ -97,14 +97,14 @@ export class Config {
 		}
 	}
 
-	private static loadArrayFromEnv(logger: winston.Logger, model: any, parentName: string = ""): any[] {
+	private static loadArrayFromEnv(logger: winston.Logger, model, parentName = ""): unknown[] {
 		if (parentName !== "") {
 			parentName += ".";
 		}
 
 		const arr = [];
 		let i = 0;
-		while (true) {
+		for (;;) {
 			const key = Config.getEnvKey(parentName + i);
 			const found = Object.keys(process.env).some((k) => k.startsWith(key));
 			if (!found) {
@@ -119,7 +119,7 @@ export class Config {
 				if (Object.keys(obj).length) {
 					arr.push(obj);
 				}
-			} else if (process.env.hasOwnProperty(key)) {
+			} else if (Object.hasOwnProperty.call(process.env, key)) {
 				arr.push(Config.parseEnvValue(process.env[key], model));
 			} else {
 				break;
@@ -142,7 +142,7 @@ export class Config {
 		);
 	}
 
-	private static parseEnvValue(value: string, model: any): any {
+	private static parseEnvValue(value: string, model: boolean | number | string): boolean | number | string {
 		const type = typeof model;
 		const lower = value.toLowerCase();
 		if (type === "boolean") {
@@ -154,7 +154,7 @@ export class Config {
 		return value;
 	}
 
-	private static checkAllMissingFields(logger: winston.Logger, obj: object, model: object, parentName: string = "") {
+	private static checkAllMissingFields(logger: winston.Logger, obj: object, model: object, parentName = "") {
 		const missing = Config.hasMissingFields(obj, model);
 		if (parentName !== "") {
 			parentName += ".";
@@ -163,7 +163,7 @@ export class Config {
 			logger.warn(`Field ${parentName}${field} is missing from config.json!`);
 		}
 		for (const key of Object.keys(model)) {
-			if (typeof model[key] === "object" && obj.hasOwnProperty(key)) {
+			if (typeof model[key] === "object" && Object.hasOwnProperty.call(obj, key)) {
 				Config.checkAllMissingFields(logger, obj[key], model[key], parentName + key);
 			}
 		}
