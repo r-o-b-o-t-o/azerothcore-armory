@@ -10,6 +10,7 @@
 	"loadDbcs": true,
 	"hideGameMasters": true,
 	"transmogModule": false,
+	"useZamCdn": false,
 	"realms": [
 		{
 			"name": "AzerothCore",
