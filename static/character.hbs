@@ -43,6 +43,12 @@
 			<input id="cb-hide-tabard" type="checkbox">
 			Hide tabard
 		</label>
+		<br>
+
+		<label class="checkbox">
+			<input id="cb-hide-transmogs" type="checkbox">
+			Hide transmogrifications
+		</label>
 	</div>
 
 	<div id="mounts-container" class="column">
@@ -125,6 +131,20 @@
 		const hide = $("#cb-hide-tabard").prop("checked");
 		setSlotVisible(19, !hide);
 	});
+	if (charData.characterModelTransmogs === undefined) {
+		$("#cb-hide-transmogs").parent().hide();
+	}
+	$("#cb-hide-transmogs").change(() => {
+		const hide = $("#cb-hide-transmogs").prop("checked");
+		const items = hide ? charData.characterModelItems : charData.characterModelTransmogs;
+		for (const slot of (items.map((item) => item[0]))) {
+			clearSlots([slot]);
+		}
+
+		const hideHelm = $("#cb-hide-helmet").prop("checked");
+		const hideCloak = $("#cb-hide-cloak").prop("checked");
+		setItems(items.filter(item => !((item[0] === 1 && hideHelm) || (item[0] === 16 && hideCloak))));
+	});
 
 	let viewer;
 	function createViewer() {
@@ -138,7 +158,9 @@
 
 	function setSlotVisible(slot, visible) {
 		if (visible) {
-			const item = charData.characterModelItems.find(([sl, appearance]) => sl === slot);
+			const transmogged = !$("#cb-hide-transmogs").prop("checked");
+			const items = transmogged ? charData.characterModelTransmogs : charData.characterModelItems;
+			const item = items.find(([sl, appearance]) => sl === slot);
 			if (item !== undefined) {
 				setItems([item]);
 			}
@@ -343,7 +365,7 @@
 			sheathOff: -1,
 		},
 		cls: charData.class,
-		items: charData.characterModelItems.filter(item => !((item[0] === 1 && hideHelm) || (item[0] === 16 && hideCloak))),
+		items: (charData.characterModelTransmogs ?? charData.characterModelItems).filter(item => !((item[0] === 1 && hideHelm) || (item[0] === 16 && hideCloak))),
 		models: {
 			type: ZamModelViewer.Wow.Types.CHARACTER,
 			id: `${races[charData.race]}${genders[charData.gender]}`,

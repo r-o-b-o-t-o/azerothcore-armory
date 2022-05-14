@@ -142,6 +142,7 @@ I also noticed that such a tool was frequently requested in the AzerothCore Disc
 | `iframeMode.url`               | `ACORE_ARMORY_IFRAME_MODE__URL`                    | String                        | `"https://mywebsite.com/armory"` | Set this to the URL of the page that hosts the `iframe`                                                                                                                                                |
 | `loadDbcs`                     | `ACORE_ARMORY_LOAD_DBCS`                           | Boolean                       | `true`                           | Loads the DBC data from the `data` directory into memory when starting   up. It is highly recommended to set this to `true`. Only use `false` to keep   memory usage low, on a test server for example |
 | `hideGameMasters`              | `ACORE_ARMORY_HIDE_GAME_MASTERS`                   | Boolean                       | `true`                           | Hides Game Master characters if set to `true`. They will not be found in   the search page, and their character pages will show a 404 error                                                            |
+| `transmogModule`               | `ACORE_ARMORY_TRANSMOG_MODULE`                     | Boolean                       | `false`                          | Set this to `true` if your server uses the [transmogrification   module](https://github.com/azerothcore/mod-transmog) and you want to display   the transmogrified items on the 3D model               |
 | `realms`                       | `ACORE_ARMORY_REALMS__`...                         | Array of objects              |                                  | An array of realm configurations                                                                                                                                                                       |
 | `realms[0].name`               | `ACORE_ARMORY_REALMS__0__NAME`                     | String                        | `"AzerothCore"`                  | The name of the realm. Will be used in the URLs, shown on the character   pages and in the search page if you have multiple realms                                                                     |
 | `realms[0].realmId`            | `ACORE_ARMORY_REALMS__0__REALM_ID`                 | Number                        | `1`                              | The realm's ID, this must match the `id` column of the `realmlist` table   in the auth database                                                                                                        |
@@ -182,8 +183,8 @@ Open a web browser and navigate to http://localhost:48733
 Other useful npm scripts:
 * `npm run clean`: cleans the build directory
 * `npm run watch`: watches for changes and rebuilds automatically, useful for development
-* `npm run fetchdata`: downloads the data needed by the 3d model viewer
-* `npm run cleardata`: clears the data downloaded for the 3d model viewer
+* `npm run fetchdata`: downloads the data needed by the 3D model viewer
+* `npm run cleardata`: clears the data downloaded for the 3D model viewer
 
 ### With Docker
 
@@ -259,7 +260,7 @@ This repository is used in production over at [ChromieCraft](https://www.chromie
 - [X] Character page
 	- [X] Online/offline status
 	- [X] Equipment with tooltips
-	- [X] 3d model, including mounts
+	- [X] 3D model, including mounts and [transmogrifications](https://github.com/azerothcore/mod-transmog)
 	- [X] Talent trees, including glyphs and dual spec support
 	- [X] Achievements
 	- [X] PvP statistics, including arena teams
