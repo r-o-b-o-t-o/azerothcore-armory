@@ -69,192 +69,194 @@
 </div>
 
 <script type="application/javascript">
-	let achievementsData = {};
-	let $openCategory;
-	const $achievementTemplate = $("#achievement-template").detach().removeAttr("id");
-	const $progressTemplate = $("#progress-template").detach().removeAttr("id");
+	$(window).on("load", () => {
+		let achievementsData = {};
+		let $openCategory;
+		const $achievementTemplate = $("#achievement-template").detach().removeAttr("id");
+		const $progressTemplate = $("#progress-template").detach().removeAttr("id");
 
-	function makeCategoryLink(cat) {
-		const $a = $("<a>")
-			.attr("href", "#")
-			.text(cat.nameLang0)
-			.on("click", () => {
-				if ($openCategory !== undefined && $openCategory !== $a && !$openCategory.data("children")[0].contains($a[0])) {
-					closeCategory();
-				}
+		function makeCategoryLink(cat) {
+			const $a = $("<a>")
+				.attr("href", "#")
+				.text(cat.nameLang0)
+				.on("click", () => {
+					if ($openCategory !== undefined && $openCategory !== $a && !$openCategory.data("children")[0].contains($a[0])) {
+						closeCategory();
+					}
 
-				const $children = $a.data("children");
-				if ($children !== undefined) {
-					$openCategory = $a;
-					if (!$children.is(":visible")) {
-						// Open the clicked category
-						$children.slideDown();
+					const $children = $a.data("children");
+					if ($children !== undefined) {
+						$openCategory = $a;
+						if (!$children.is(":visible")) {
+							// Open the clicked category
+							$children.slideDown();
+						}
+					}
+					openCategory(cat);
+					return false;
+				});
+			return $a;
+		}
+
+		function makeAchievement(achievement) {
+			const isEarned = achievement.id in achievementsData.earned;
+			if (!isEarned && achievement.category === 81) {
+				// Show unlocked feats of strength only
+				return;
+			}
+
+			const $achievement = $achievementTemplate
+				.clone(false)
+				.appendTo($("#achievements"));
+			$achievement.find(".name").text(achievement.title);
+			$achievement.find(".description").text(achievement.description);
+			$achievement.find(".points .value").text(achievement.points);
+			if (achievement.points === 0) {
+				$achievement.find(".points").addClass("no-points");
+			}
+			$achievement.find(".iconlarge .icon").css("background-image", `url("{{aowow}}/static/images/wow/icons/large/${achievement.icon}.jpg")`);
+			$achievement.find("a").attr("href", `{{aowow}}?achievement=${achievement.id}`);
+
+			if (isEarned) {
+				const date = new Date(achievementsData.earned[achievement.id] * 1000);
+				$achievement.find(".earned-date").text(date.toLocaleDateString());
+				$achievement.addClass("earned");
+			}
+
+			return $achievement;
+		}
+
+		function openCategory(cat) {
+			const categoryAchievements = achievementsData.achievements.filter(ach => ach.category === cat.id);
+
+			$("#achievements").empty();
+			$(".summary").hide();
+
+			for (const achievement of categoryAchievements) {
+				makeAchievement(achievement);
+			}
+		}
+
+		function closeCategory() {
+			if ($openCategory === undefined || $openCategory.data("children") === undefined) {
+				return;
+			}
+
+			$openCategory
+				.data("children")
+				.slideUp();
+		}
+
+		function openSummary() {
+			closeCategory();
+			$("#achievements").empty();
+			const achievements = Object.keys(achievementsData.earned)
+				.filter(key => achievementsData.earned.hasOwnProperty(key))
+				.map(key => parseInt(key, 10))
+				.map(achievement => {
+					return {
+						achievement,
+						...achievementsData.earned[achievement],
+					};
+				});
+			const mostRecent = achievements.sort((a, b) => b.date - a.date).slice(0, 4);
+			for (const row of mostRecent) {
+				const achievement = achievementsData.achievements.find(ach => ach.id === row.achievement);
+				makeAchievement(achievement);
+			}
+
+			$(".summary").show();
+		}
+
+		function makeProgressBarRow(barsData) {
+			const $row = $("<div>").addClass("columns");
+			$("#progress-bars").append($row);
+
+			for (const bar of barsData) {
+				let $bar = $progressTemplate.clone(false);
+				$bar.find(".title").text(bar.name);
+				$bar.find(".value").text(`${bar.earned} / ${bar.total}`);
+				$bar.find(".progress").attr("value", bar.earned).attr("max", bar.total);
+				$row.append($bar);
+			}
+
+			return $row;
+		}
+
+		function makeProgressBars() {
+			let totalAchievements = 0;
+			let totalAchievementsEarned = 0;
+
+			const findProgress = (catId) => {
+				const cat = achievementsData.categories.find(cat => cat.id === catId);
+				const subCategories = achievementsData.categories.filter(cat => cat.parent === catId);
+				const categoryAchievements = achievementsData.achievements.filter(ach => ach.category === cat.id || subCategories.some(cat => cat.id === ach.category));
+				let earned = 0;
+				for (const ach of categoryAchievements) {
+					if (ach.id in achievementsData.earned) {
+						++earned;
 					}
 				}
-				openCategory(cat);
-				return false;
-			});
-		return $a;
-	}
+				totalAchievementsEarned += earned;
+				totalAchievements += categoryAchievements.length;
 
-	function makeAchievement(achievement) {
-		const isEarned = achievement.id in achievementsData.earned;
-		if (!isEarned && achievement.category === 81) {
-			// Show unlocked feats of strength only
-			return;
-		}
-
-		const $achievement = $achievementTemplate
-			.clone(false)
-			.appendTo($("#achievements"));
-		$achievement.find(".name").text(achievement.title);
-		$achievement.find(".description").text(achievement.description);
-		$achievement.find(".points .value").text(achievement.points);
-		if (achievement.points === 0) {
-			$achievement.find(".points").addClass("no-points");
-		}
-		$achievement.find(".iconlarge .icon").css("background-image", `url("{{aowow}}/static/images/wow/icons/large/${achievement.icon}.jpg")`);
-		$achievement.find("a").attr("href", `{{aowow}}?achievement=${achievement.id}`);
-
-		if (isEarned) {
-			const date = new Date(achievementsData.earned[achievement.id] * 1000);
-			$achievement.find(".earned-date").text(date.toLocaleDateString());
-			$achievement.addClass("earned");
-		}
-
-		return $achievement;
-	}
-
-	function openCategory(cat) {
-		const categoryAchievements = achievementsData.achievements.filter(ach => ach.category === cat.id);
-
-		$("#achievements").empty();
-		$(".summary").hide();
-
-		for (const achievement of categoryAchievements) {
-			makeAchievement(achievement);
-		}
-	}
-
-	function closeCategory() {
-		if ($openCategory === undefined || $openCategory.data("children") === undefined) {
-			return;
-		}
-
-		$openCategory
-			.data("children")
-			.slideUp();
-	}
-
-	function openSummary() {
-		closeCategory();
-		$("#achievements").empty();
-		const achievements = Object.keys(achievementsData.earned)
-			.filter(key => achievementsData.earned.hasOwnProperty(key))
-			.map(key => parseInt(key, 10))
-			.map(achievement => {
 				return {
-					achievement,
-					...achievementsData.earned[achievement],
+					name: cat.nameLang0,
+					earned,
+					total: categoryAchievements.length,
 				};
-			});
-		const mostRecent = achievements.sort((a, b) => b.date - a.date).slice(0, 4);
-		for (const row of mostRecent) {
-			const achievement = achievementsData.achievements.find(ach => ach.id === row.achievement);
-			makeAchievement(achievement);
-		}
-
-		$(".summary").show();
-	}
-
-	function makeProgressBarRow(barsData) {
-		const $row = $("<div>").addClass("columns");
-		$("#progress-bars").append($row);
-
-		for (const bar of barsData) {
-			let $bar = $progressTemplate.clone(false);
-			$bar.find(".title").text(bar.name);
-			$bar.find(".value").text(`${bar.earned} / ${bar.total}`);
-			$bar.find(".progress").attr("value", bar.earned).attr("max", bar.total);
-			$row.append($bar);
-		}
-
-		return $row;
-	}
-
-	function makeProgressBars() {
-		let totalAchievements = 0;
-		let totalAchievementsEarned = 0;
-
-		const findProgress = (catId) => {
-			const cat = achievementsData.categories.find(cat => cat.id === catId);
-			const subCategories = achievementsData.categories.filter(cat => cat.parent === catId);
-			const categoryAchievements = achievementsData.achievements.filter(ach => ach.category === cat.id || subCategories.some(cat => cat.id === ach.category));
-			let earned = 0;
-			for (const ach of categoryAchievements) {
-				if (ach.id in achievementsData.earned) {
-					++earned;
-				}
-			}
-			totalAchievementsEarned += earned;
-			totalAchievements += categoryAchievements.length;
-
-			return {
-				name: cat.nameLang0,
-				earned,
-				total: categoryAchievements.length,
 			};
-		};
-		makeProgressBarRow([{ ...findProgress(92) }, { ...findProgress(96) }]);
-		makeProgressBarRow([{ ...findProgress(97) }, { ...findProgress(95) }]);
-		makeProgressBarRow([{ ...findProgress(168) }, { ...findProgress(169) }]);
-		makeProgressBarRow([{ ...findProgress(201) }, { ...findProgress(155) }]);
-		const $totalRow = makeProgressBarRow([{ name: "Achievements Earned", earned: totalAchievementsEarned, total: totalAchievements }]);
-		$totalRow.prependTo($("#progress-bars")); // Move the total bar to the top
-	}
+			makeProgressBarRow([{ ...findProgress(92) }, { ...findProgress(96) }]);
+			makeProgressBarRow([{ ...findProgress(97) }, { ...findProgress(95) }]);
+			makeProgressBarRow([{ ...findProgress(168) }, { ...findProgress(169) }]);
+			makeProgressBarRow([{ ...findProgress(201) }, { ...findProgress(155) }]);
+			const $totalRow = makeProgressBarRow([{ name: "Achievements Earned", earned: totalAchievementsEarned, total: totalAchievements }]);
+			$totalRow.prependTo($("#progress-bars")); // Move the total bar to the top
+		}
 
-	$.getJSON(`{{websiteRoot}}/character/{{realm}}/{{guid}}/achievements/data`, (data) => {
-		achievementsData = data;
+		$.getJSON(`{{websiteRoot}}/character/{{realm}}/{{guid}}/achievements/data`, (data) => {
+			achievementsData = data;
 
-		const $summaryLink = $("<a>")
-			.attr("href", "#")
-			.text("Summary")
-			.on("click", openSummary)
-			.appendTo($("#categories"));
+			const $summaryLink = $("<a>")
+				.attr("href", "#")
+				.text("Summary")
+				.on("click", openSummary)
+				.appendTo($("#categories"));
 
-		for (const cat of achievementsData.categories.filter(c => c.parent < 0)) {
-			if (cat.id === 1) {
-				// Skip Statistics category
-				continue;
-			}
-			const children = achievementsData.categories.filter(c => c.parent === cat.id);
-
-			const $cat = makeCategoryLink(cat);
-			$("#categories").append($cat);
-
-			if (children.length > 0) {
-				const $children = $("<div>")
-					.hide()
-					.addClass("subcategories");
-				$cat.data("children", $children);
-				for (const child of children) {
-					const $child = makeCategoryLink(child);
-					$child.appendTo($children);
+			for (const cat of achievementsData.categories.filter(c => c.parent < 0)) {
+				if (cat.id === 1) {
+					// Skip Statistics category
+					continue;
 				}
+				const children = achievementsData.categories.filter(c => c.parent === cat.id);
 
-				$("#categories").append($children);
+				const $cat = makeCategoryLink(cat);
+				$("#categories").append($cat);
+
+				if (children.length > 0) {
+					const $children = $("<div>")
+						.hide()
+						.addClass("subcategories");
+					$cat.data("children", $children);
+					for (const child of children) {
+						const $child = makeCategoryLink(child);
+						$child.appendTo($children);
+					}
+
+					$("#categories").append($children);
+				}
 			}
-		}
 
-		let totalPoints = 0;
-		for (const ach of achievementsData.achievements) {
-			if (ach.id in achievementsData.earned) {
-				totalPoints += ach.points;
+			let totalPoints = 0;
+			for (const ach of achievementsData.achievements) {
+				if (ach.id in achievementsData.earned) {
+					totalPoints += ach.points;
+				}
 			}
-		}
-		$("#total-points").text(totalPoints);
+			$("#total-points").text(totalPoints);
 
-		makeProgressBars();
-		openSummary();
+			makeProgressBars();
+			openSummary();
+		});
 	});
 </script>
