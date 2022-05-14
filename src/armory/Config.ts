@@ -31,6 +31,7 @@ export class Config {
 	public iframeMode: IIframeModeConfig;
 	public loadDbcs: boolean;
 	public hideGameMasters: boolean;
+	public transmogModule: boolean;
 	public realms: IRealmConfig[];
 	public worldDatabase: IDatabaseConfig;
 	public dbQueryTimeout: number;

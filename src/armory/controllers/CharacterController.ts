@@ -32,6 +32,7 @@ interface IEquipmentData {
 	classId: number;
 	subclassId: number;
 	quality: number;
+	transmog?: number;
 }
 
 interface ICustomizationOption {
@@ -120,7 +121,7 @@ export class CharacterController {
 		}
 
 		this.itemSocketBonuses = {};
-		let [rows, fields] = await this.armory.worldDb.query({
+		const [rows, fields] = await this.armory.worldDb.query({
 			sql: "SELECT entry, socketBonus FROM item_template WHERE socketBonus <> 0",
 			timeout: this.armory.config.dbQueryTimeout,
 		});
@@ -180,6 +181,8 @@ export class CharacterController {
 			return row;
 		});
 		const mounts = await this.getMounts(realmName, charData.guid);
+		const transmogs: number[][] = this.armory.config.transmogModule ? [] : undefined;
+		const characterModelItems = await this.getModelViewerItems(equipmentData, charData.class, transmogs);
 
 		res.render("character.hbs", {
 			title: `Armory - ${charData.name}`,
@@ -189,7 +192,8 @@ export class CharacterController {
 				gender: charData.gender,
 				class: charData.class,
 				flags: charData.playerFlags,
-				characterModelItems: await this.getModelViewerItems(equipmentData, charData.class),
+				characterModelItems,
+				characterModelTransmogs: transmogs,
 				customizationOptions: customization,
 				equipment,
 				mounts,
@@ -332,11 +336,16 @@ export class CharacterController {
 	}
 
 	private async getEquipmentData(realm: string, charGuid: number): Promise<IEquipmentData[]> {
+		const transmogSelect = this.armory.config.transmogModule ? ", custom_transmogrification.FakeEntry AS transmog" : "";
+		const transmogJoin = this.armory.config.transmogModule ? "LEFT JOIN custom_transmogrification ON custom_transmogrification.GUID = item_instance.guid" : "";
 		let [rows, fields] = await this.armory.getCharactersDb(realm).query({
 			sql: `
-				SELECT character_inventory.slot, item_instance.itemEntry, item_instance.flags, item_instance.enchantments, item_instance.randomPropertyId
+				SELECT
+					character_inventory.slot, item_instance.itemEntry, item_instance.flags, item_instance.enchantments, item_instance.randomPropertyId
+					${transmogSelect}
 				FROM character_inventory
 				JOIN item_instance ON item_instance.guid = character_inventory.item
+				${transmogJoin}
 				WHERE character_inventory.guid = ? AND character_inventory.bag = 0 AND character_inventory.slot IN (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18)
 			`,
 			values: [charGuid],
@@ -378,7 +387,7 @@ export class CharacterController {
 		return (rows as RowDataPacket[]).map((row) => this.mountBySpellId[row.spell]).filter((m) => m !== undefined);
 	}
 
-	private async getModelViewerItems(equipmentData: IEquipmentData[], charClass: number): Promise<number[][]> {
+	private async getModelViewerItems(equipmentData: IEquipmentData[], charClass: number, transmogOut?: number[][]): Promise<number[][]> {
 		if (charClass !== 3) {
 			// Keep ranged weapon only if the character is a hunter
 			equipmentData = equipmentData.filter((row) => row.slot !== 17);
@@ -395,12 +404,27 @@ export class CharacterController {
 			if (modifiedAppearance === undefined) {
 				continue;
 			}
-			const appearance = await this.armory.dbc.itemAppearance().find((row) => row.id === modifiedAppearance.itemAppearanceId);
+			let appearance = await this.armory.dbc.itemAppearance().find((row) => row.id === modifiedAppearance.itemAppearanceId);
 			if (appearance === undefined) {
 				continue;
 			}
 
-			items.push([this.itemInventoryTypes[equipment.itemEntry], appearance.itemDisplayInfoId]);
+			let invType = this.itemInventoryTypes[equipment.itemEntry];
+			items.push([invType, appearance.itemDisplayInfoId]);
+
+			if (transmogOut !== undefined) {
+				if (equipment.transmog !== undefined) {
+					const modifiedAppearance = await this.armory.dbc.itemModifiedAppearance().find((row) => row.itemId === equipment.transmog);
+					if (modifiedAppearance !== undefined) {
+						const tmogAppearance = await this.armory.dbc.itemAppearance().find((row) => row.id === modifiedAppearance.itemAppearanceId);
+						if (tmogAppearance !== undefined) {
+							appearance = tmogAppearance;
+							invType = this.itemInventoryTypes[equipment.transmog];
+						}
+					}
+				}
+				transmogOut.push([invType, appearance.itemDisplayInfoId]);
+			}
 		}
 
 		return items;

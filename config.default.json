@@ -9,6 +9,7 @@
 	},
 	"loadDbcs": true,
 	"hideGameMasters": true,
+	"transmogModule": false,
 	"realms": [
 		{
 			"name": "AzerothCore",
