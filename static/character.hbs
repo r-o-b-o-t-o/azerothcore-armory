@@ -172,7 +172,8 @@
 
 			const hideHelm = $("#cb-hide-helmet").prop("checked");
 			const hideCloak = $("#cb-hide-cloak").prop("checked");
-			setItems(items.filter(item => !((item[0] === 1 && hideHelm) || (item[0] === 16 && hideCloak))));
+			const hideTabard = $("#cb-hide-tabard").prop("checked");
+			setItems(items.filter(item => !((item[0] === 1 && hideHelm) || (item[0] === 16 && hideCloak) || (item[0] === 19 && hideTabard))));
 		});
 
 		let viewer;
