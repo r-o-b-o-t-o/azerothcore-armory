@@ -24,3 +24,12 @@
 	height: 100% !important;
 	width: 100% !important;
 }
+
+.no-link-text a span {
+	display: none;
+}
+
+#list-transmogs-container,
+#lbl-hide-transmogs {
+	display: none;
+}

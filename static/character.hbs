@@ -1,8 +1,13 @@
 <link rel="stylesheet" type="text/css" href="{{websiteRoot}}/css/character.css">
 {{> icons }}
+<script type="application/javascript">
+	const aowow_tooltips = {
+		renamelinks: true,
+		colorlinks: true,
+	};
+</script>
 
 <script type="application/javascript" src="{{websiteRoot}}/js/viewer.min.js"></script>
-<script type="application/javascript" src="{{aowow}}/static/widgets/power.js"></script>
 
 {{> character-header }}
 
@@ -45,16 +50,24 @@
 		</label>
 		<br>
 
-		<label class="checkbox">
+		<label id="lbl-hide-transmogs" class="checkbox">
 			<input id="cb-hide-transmogs" type="checkbox">
 			Hide transmogrifications
 		</label>
 	</div>
 
+	<div id="list-transmogs-container" class="column is-one-quarter">
+		<button id="btn-transmogs" class="button is-primary">Transmogrifications</button>
+
+		<div id="list-transmogs" class="box" style="display: none;">
+			<ul></ul>
+		</div>
+	</div>
+
 	<div id="mounts-container" class="column">
 		<button id="btn-mounts" class="button is-primary">Mounts</button>
 
-		<div id="mount-template" class="iconmedium">
+		<div id="mount-template" class="iconmedium no-link-text">
 			<div class="icon"></div>
 			<div class="border"></div>
 			<a target="_blank"></a>
@@ -63,11 +76,16 @@
 	</div>
 </div>
 
-<div id="item-slot-template" class="item-slot">
+<div id="item-slot-template" class="item-slot no-link-text">
 	<div class="inventory-slot"></div>
 	<div class="icon"></div>
 	<div class="border"></div>
 	<a target="_blank"></a>
+</div>
+
+<div style="display: none;">
+	<!-- Hackfix for aowow's tooltip opening when the page loads -->
+	<a href="{{aowow}}/?spell=10"></a>
 </div>
 
 <script type="application/javascript">
@@ -132,8 +150,18 @@
 			const hide = $("#cb-hide-tabard").prop("checked");
 			setSlotVisible(19, !hide);
 		});
-		if (charData.characterModelTransmogs === undefined) {
-			$("#cb-hide-transmogs").parent().hide();
+		if (charData.characterModelTransmogs !== undefined && charData.equipment.some((item) => item.transmog !== null)) {
+			$("#lbl-hide-transmogs").show();
+			$("#list-transmogs-container").show();
+
+			for (const item of charData.equipment) {
+				if (item.transmog !== undefined) {
+					const $li = $("<li>").appendTo("#list-transmogs ul");
+					$("<a>")
+						.attr("href", `{{aowow}}/?item=${item.transmog}`)
+						.appendTo($li);
+				}
+			}
 		}
 		$("#cb-hide-transmogs").change(() => {
 			const hide = $("#cb-hide-transmogs").prop("checked");
@@ -337,6 +365,9 @@
 		$("#btn-mounts").on("click", () => {
 			$("#mounts").slideToggle("fast");
 		});
+		$("#btn-transmogs").on("click", () => {
+			$("#list-transmogs").slideToggle("fast");
+		});
 
 		const sheathTypes = {
 			2: {
@@ -415,5 +446,9 @@
 			windowWidth = newWidth;
 			onResize();
 		}, 500));
+
+		$("<script>")
+			.attr("src", "{{aowow}}/static/widgets/power.js")
+			.appendTo("body");
 	});
 </script>
