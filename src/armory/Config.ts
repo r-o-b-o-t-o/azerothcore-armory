@@ -32,6 +32,7 @@ export class Config {
 	public loadDbcs: boolean;
 	public hideGameMasters: boolean;
 	public transmogModule: boolean;
+	public useZamCdn: boolean;
 	public realms: IRealmConfig[];
 	public worldDatabase: IDatabaseConfig;
 	public dbQueryTimeout: number;

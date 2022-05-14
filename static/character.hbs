@@ -154,6 +154,12 @@
 
 		viewer?.destroy();
 		viewer = new ZamModelViewer(characterModel);
+		const isLoadedInterval = setInterval(() => {
+			if (viewer.method("isLoaded")) {
+				clearInterval(isLoadedInterval);
+				setBackground("background.png");
+			}
+		}, 100);
 	}
 
 	function setSlotVisible(slot, visible) {
@@ -290,6 +296,18 @@
 		createViewer();
 	}
 
+	function setBackground(file) {
+		if (!viewer) {
+			return;
+		}
+
+		const originalContentPath = viewer.options.contentPath;
+		viewer.options.contentPath = "{{websiteRoot}}/data/";
+		viewer.options.background = file;
+		viewer.renderer.loadBackground();
+		viewer.options.contentPath = originalContentPath;
+	}
+
 	if (charData.mounts.length === 0) {
 		$("#mounts-container").hide();
 	} else {
@@ -352,8 +370,7 @@
 
 	const characterModel = {
 		type: ZamModelViewer.WOW,
-		contentPath: "{{websiteRoot}}/data/",
-		background: "background.png",
+		contentPath: "{{ contentPath }}",
 		container: $model,
 		hd: true,
 		aspect: $model.outerWidth() / $model.outerHeight(),
