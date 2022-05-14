@@ -14,7 +14,7 @@ config.json
 .env
 
 # Log files
-*.log
+logs/
 
 # Git folder
 .git/
