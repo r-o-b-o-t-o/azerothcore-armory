@@ -156,7 +156,7 @@
 				.map(achievement => {
 					return {
 						achievement,
-						...achievementsData.earned[achievement],
+						date: achievementsData.earned[achievement],
 					};
 				});
 			const mostRecent = achievements.sort((a, b) => b.date - a.date).slice(0, 4);
