@@ -223,8 +223,10 @@ class DbcReader<T> {
 
 		for await (const arr of itr) {
 			const cols = arr.map((value) => {
-				const parsed = parseInt(value, 10);
-				return isNaN(parsed) ? value : parsed;
+				if (value === "") {
+					return value;
+				}
+				return isNaN(+value) ? value : parseInt(value, 10);
 			});
 			const row = {};
 			headerCols.forEach((header, headerIdx) => {
