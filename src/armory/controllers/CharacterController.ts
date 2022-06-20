@@ -213,7 +213,7 @@ export class CharacterController {
 		res.render("character.hbs", {
 			title: `Armory - ${charData.name}`,
 			...this.makeSharedDataObject(realm, charData),
-			contentPath: this.armory.config.useZamCdn ? "https://wow.zamimg.com/modelviewer/live/" : (this.armory.config.websiteRoot + "/data/"),
+			contentPath: this.armory.config.useZamCdn ? "https://wow.zamimg.com/modelviewer/live/" : this.armory.config.websiteRoot + "/data/",
 			data: {
 				race: charData.race,
 				gender: charData.gender,
