@@ -302,7 +302,7 @@
 				const offHand = charData.equipment.find(e => e.slot === 16);
 				const ranged = charData.equipment.find(e => e.slot === 17);
 
-				characterModel.charCustomization.sheathMain = sheathTypes[mainHand.classId][mainHand.subclassId];
+				characterModel.charCustomization.sheathMain = mainHand !== undefined ? sheathTypes[mainHand.classId][mainHand.subclassId] : undefined;
 				if (offHand !== undefined) {
 					characterModel.charCustomization.sheathOff = sheathTypes[offHand.classId][offHand.subclassId];
 				} else if (ranged !== undefined) {
