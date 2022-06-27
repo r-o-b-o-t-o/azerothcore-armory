@@ -155,7 +155,7 @@
 			$("#list-transmogs-container").show();
 
 			for (const item of charData.equipment) {
-				if (item.transmog !== undefined) {
+				if (item.transmog !== undefined && item.transmog !== 1) {
 					const $li = $("<li>").appendTo("#list-transmogs ul");
 					$("<a>")
 						.attr("href", `{{aowow}}/?item=${item.transmog}`)
@@ -173,7 +173,7 @@
 			const hideHelm = $("#cb-hide-helmet").prop("checked");
 			const hideCloak = $("#cb-hide-cloak").prop("checked");
 			const hideTabard = $("#cb-hide-tabard").prop("checked");
-			setItems(items.filter(item => !((item[0] === 1 && hideHelm) || (item[0] === 16 && hideCloak) || (item[0] === 19 && hideTabard))));
+			setItems(items.filter(item => !((item[0] === 1 && hideHelm) || (item[0] === 16 && hideCloak) || (item[0] === 19 && hideTabard)) && item[1] !== -1));
 		});
 
 		let viewer;
@@ -198,7 +198,11 @@
 				const items = transmogged ? charData.characterModelTransmogs : charData.characterModelItems;
 				const item = items.find(([sl, appearance]) => sl === slot);
 				if (item !== undefined) {
-					setItems([item]);
+					if (item[1] === -1) {
+						clearSlots([slot]);
+					} else {
+						setItems([item]);
+					}
 				}
 			} else {
 				clearSlots([slot]);
@@ -416,7 +420,8 @@
 				sheathOff: -1,
 			},
 			cls: charData.class,
-			items: (charData.characterModelTransmogs ?? charData.characterModelItems).filter(item => !((item[0] === 1 && hideHelm) || (item[0] === 16 && hideCloak))),
+			items: (charData.characterModelTransmogs ?? charData.characterModelItems)
+				.filter(item => !((item[0] === 1 && hideHelm) || (item[0] === 16 && hideCloak)) && item[1] !== -1),
 			models: {
 				type: ZamModelViewer.Wow.Types.CHARACTER,
 				id: `${races[charData.race]}${genders[charData.gender]}`,

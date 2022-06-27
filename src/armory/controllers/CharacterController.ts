@@ -437,18 +437,23 @@ export class CharacterController {
 			if (appearance === undefined) {
 				continue;
 			}
+			appearance = { ...appearance };
 
 			let invType = this.itemInventoryTypes[equipment.itemEntry];
 			items.push([invType, appearance.itemDisplayInfoId]);
 
 			if (transmogOut !== undefined) {
 				if (equipment.transmog !== undefined) {
-					const modifiedAppearance = await this.armory.dbc.itemModifiedAppearance().find((row) => row.itemId === equipment.transmog);
-					if (modifiedAppearance !== undefined) {
-						const tmogAppearance = await this.armory.dbc.itemAppearance().find((row) => row.id === modifiedAppearance.itemAppearanceId);
-						if (tmogAppearance !== undefined) {
-							appearance = tmogAppearance;
-							invType = this.itemInventoryTypes[equipment.transmog];
+					if (equipment.transmog === 1) {
+						appearance.itemDisplayInfoId = -1; // Hidden gear piece from transmog
+					} else {
+						const modifiedAppearance = await this.armory.dbc.itemModifiedAppearance().find((row) => row.itemId === equipment.transmog);
+						if (modifiedAppearance !== undefined) {
+							const tmogAppearance = await this.armory.dbc.itemAppearance().find((row) => row.id === modifiedAppearance.itemAppearanceId);
+							if (tmogAppearance !== undefined) {
+								appearance = tmogAppearance;
+								invType = this.itemInventoryTypes[equipment.transmog];
+							}
 						}
 					}
 				}
