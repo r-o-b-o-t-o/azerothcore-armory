@@ -4,7 +4,7 @@ import * as path from "path";
 
 import * as pako from "pako";
 import * as mkdirp from "mkdirp";
-import * as glob from "glob-promise";
+import * as glob from "glob";
 import "source-map-support/register";
 import * as prettyMs from "pretty-ms";
 import * as cliProgress from "cli-progress";
@@ -14,6 +14,18 @@ import promisepool = require("@supercharge/promise-pool");
 import { DbcManager, IItemAppearanceDbc, IItemModifiedAppearanceDbc, IMountDbc, IMountXDisplayDbc } from "../armory/data/DbcReader";
 
 const baseUrl = "https://wow.zamimg.com/modelviewer/live";
+
+const globAsync = (pattern: string, options?: glob.IOptions) => {
+	return new Promise<string[]>((res, rej) => {
+		glob(pattern, options, (err, matches) => {
+			if (err) {
+				rej(err);
+			} else {
+				res(matches);
+			}
+		});
+	});
+};
 
 class Stopwatch {
 	private startTime: number;
@@ -367,7 +379,7 @@ async function downloadBones(): Promise<void> {
 }
 
 async function parseModels(): Promise<void> {
-	const files = await glob("data/mo3/*.mo3");
+	const files = await globAsync("data/mo3/*.mo3");
 	const progress = new Progress("Reading model files for texture references...", files.length);
 
 	await promisepool.PromisePool.for(files)
