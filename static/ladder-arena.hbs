@@ -1,0 +1,101 @@
+<link rel="stylesheet" type="text/css" href="{{websiteRoot}}/css/index.css">
+<link rel="stylesheet" type="text/css" href="{{websiteRoot}}/css/ladder-arena.css">
+{{> datatables}}
+
+<h1 class="title is-size-1">Arena Ladder</h1>
+
+<a href="{{websiteRoot}}/">Armory</a>&emsp;
+
+<br><br>
+
+{{#if (not (equalsLength realms 1))}}
+<div id="select-realm-container">
+	<span class="realm-label">Realm:</span>
+	<div class="select">
+		<select id="select-realm">
+			{{#each realms}}
+			<option>{{this}}</option>
+			{{/each}}
+		</select>
+	</div>
+	&ensp;
+	<div class="select">
+		<select id="select-arena-type">
+			<option value="2">2v2</option>
+			<option value="3">3v3</option>
+			<option value="5">5v5</option>
+		</select>
+	</div>
+</div>
+{{else}}
+<div id="select-arena-type-container">
+	<span class="arena-type-label">Type:</span>
+	<div class="select">
+		<select id="select-arena-type">
+			<option value="2">2v2</option>
+			<option value="3">3v3</option>
+			<option value="5">5v5</option>
+		</select>
+	</div>
+</div>
+{{/if}}
+
+<br>
+
+<table id="results" class="stripe hover row-border">
+	<thead>
+		<tr>
+			<th>Name</th>
+			<th>Rating</th>
+			<th>Wins</th>
+			<th>Losses</th>
+		</tr>
+	</thead>
+	<tbody></tbody>
+</table>
+
+<script type="application/javascript">
+	$(window).on("load", () => {
+		let dt;
+
+		$("#select-realm, #select-arena-type").on("change", () => {
+			dt.draw();
+		});
+
+		dt = $("#results").DataTable({
+			processing: true,
+			serverSide: true,
+			searchDelay: 800,
+			ajax: {
+				url: `{{websiteRoot}}/arena/ladder`,
+				data: d => {
+					d.realm = $("#select-realm").val();
+					d.teamsize = $("#select-arena-type").val();
+				},
+			},
+			columnDefs: [
+				{
+					targets: 0,
+					render: (name, type, row, meta) => `<a href="{{websiteRoot}}/arena/team/${meta.settings.json.realm}/${name}">${name}</a>`,
+				},
+				{
+					targets: 1,
+					searchable: false,
+				},
+				{
+					targets: 2,
+					searchable: false,
+				},
+				{
+					targets: 3,
+					searchable: false,
+					render: (gamesPlayed, type, row, meta) => gamesPlayed - row[2],
+				},
+			],
+			responsive: {
+				details: true,
+			},
+			order: [[1, "desc"], [0, "asc"]],
+		});
+	});
+</script>

@@ -275,6 +275,8 @@ This repository is used in production over at [ChromieCraft](https://www.chromie
 - [X] Multiple realms support
 - [ ] PvE ladder
 - [ ] PvP ladder
+- [X] Arena ladder
+- [ ] Achievements ladder
 
 See the [open issues](https://github.com/r-o-b-o-t-o/azerothcore-armory/issues) for a list of suggested features and known issues.
 

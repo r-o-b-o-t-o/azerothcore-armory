@@ -1,0 +1,29 @@
+#arena-header {
+	display: flex;
+}
+
+#arena-header .emblem-container {
+	margin-right: 1em;
+}
+
+#arena-header .info {
+	text-align: center;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+}
+
+#arena-header .info .team-name {
+	margin-top: -8px;
+}
+
+#stats td,
+#stats th {
+	border: 1px solid #dddddd;
+	text-align: left;
+	padding: 8px;
+}
+
+.dataTables_info {
+	display: none;
+}

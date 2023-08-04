@@ -1,0 +1,115 @@
+<link rel="stylesheet" type="text/css" href="{{websiteRoot}}/css/arena-team.css">
+{{> datatables}}
+{{> emblems}}
+
+<a href="{{websiteRoot}}/arena">Back to Arena Ladder</a>
+<br><br>
+
+<div id="arena-header">
+	<div class="emblem-container">
+		<div class="arena-emblem">
+			<canvas width="74" height="128"></canvas>
+		</div>
+	</div>
+
+	<div class="info">
+		<div class="team-name is-size-3">{{name}}</div>
+		<div class="is-size-5">
+			{{type}}v{{type}} Team, {{realm}}
+		</div>
+	</div>
+</div>
+
+<br>
+
+<div class="is-size-5">Rating: {{rating}}</div>
+<table id="stats">
+	<thead>
+		<tr>
+			<th></th>
+			<th>Games</th>
+			<th>Wins</th>
+			<th>Losses</th>
+			<th>Win Rate</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td>Week</td>
+			<td>{{weekGames}}</td>
+			<td>{{weekWins}}</td>
+			<td>{{subtract weekGames weekWins}}</td>
+			<td>
+				{{#if (isnt weekGames 0)}}
+					{{toPrecision (multiply (divide weekWins weekGames) 100) 3}} %
+				{{/if}}
+			</td>
+		</tr>
+		<tr>
+			<td>Season</td>
+			<td>{{seasonGames}}</td>
+			<td>{{seasonWins}}</td>
+			<td>{{subtract seasonGames seasonWins}}</td>
+			<td>
+				{{#if (isnt seasonGames 0)}}
+					{{toPrecision (multiply (divide seasonWins seasonGames) 100) 3}} %
+				{{/if}}
+			</td>
+		</tr>
+	</tbody>
+</table>
+
+<br>
+<div class="is-size-5">Members:</div>
+<table id="members" class="stripe hover row-border">
+	<thead>
+		<tr>
+			<th>Name</th>
+			<th>Class</th>
+			<th>Race</th>
+			<th>Week Wins</th>
+			<th>Week Losses</th>
+			<th>Season Wins</th>
+			<th>Season Losses</th>
+			<th>Rating</th>
+			<th>Online</th>
+		</tr>
+	</thead>
+	<tbody>
+		{{#each members}}
+			<tr>
+				<td>
+					<a href="{{../websiteRoot}}/character/{{../realm}}/{{name}}/pvp">
+						{{name}}
+					</a>
+				</td>
+				<td>
+					<img src="{{../aowow}}/static/images/wow/icons/medium/class_{{class}}.jpg">
+				</td>
+				<td>
+					<img src="{{../aowow}}/static/images/wow/icons/medium/race_{{race}}_{{gender}}.jpg">
+				</td>
+				<td>{{weekWins}}</td>
+				<td>{{subtract weekGames weekWins}}</td>
+				<td>{{seasonWins}}</td>
+				<td>{{subtract seasonGames seasonWins}}</td>
+				<td>{{personalRating}}</td>
+				<td>{{#if online}}🟢{{else}}🔴{{/if}}</td>
+			</tr>
+		{{/each}}
+	</tbody>
+</table>
+
+<script type="application/javascript">
+	$(window).on("load", () => {
+		createArenaEmblem({{this.type}}, {{{JSONstringify this.emblem}}}, $(".arena-emblem")[0]);
+
+		const dt = $("#members").DataTable({
+			searching: false,
+			paging: false,
+			responsive: {
+				details: true,
+			},
+		});
+	});
+</script>

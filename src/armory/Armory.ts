@@ -13,6 +13,7 @@ import { CharacterCustomization } from "./data/CharacterCustomization";
 import { IndexController } from "./controllers/IndexController";
 import { CharacterController } from "./controllers/CharacterController";
 import { GuildController } from "./controllers/GuildController";
+import { ArenaController } from "./controllers/ArenaController";
 
 export class Armory {
 	public characterCustomization: CharacterCustomization;
@@ -156,6 +157,11 @@ export class Armory {
 		const guildsController = new GuildController(this);
 		app.get("/guild/:realm/:name", this.wrapRoute(guildsController.guild.bind(guildsController)));
 		app.get("/guild/:realm/:guild/members", this.wrapRoute(guildsController.members.bind(guildsController)));
+
+		const arenaController = new ArenaController(this);
+		app.get("/arena", this.wrapRoute(arenaController.index.bind(arenaController)));
+		app.get("/arena/ladder", this.wrapRoute(arenaController.ladder.bind(arenaController)));
+		app.get("/arena/team/:realm/:name", this.wrapRoute(arenaController.team.bind(arenaController)));
 
 		app.use((err, req: express.Request, res: express.Response, next: express.NextFunction) => {
 			// Error handler

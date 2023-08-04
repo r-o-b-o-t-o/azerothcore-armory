@@ -319,6 +319,7 @@ export class CharacterController {
 
 		res.render("character-pvp.hbs", {
 			title: `Armory - ${charData.name} - PvP`,
+			realm: realm.name,
 			...this.makeSharedDataObject(realm, charData),
 			faction: Utils.getFactionFromRaceId(charData.race),
 			kills: await this.getPvpKills(realm.name, charData.guid),

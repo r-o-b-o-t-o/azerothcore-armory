@@ -20,7 +20,9 @@
 	<div class="column is-full-touch is-one-quarter-desktop">
 		<div class="box arena-team" data-team-id="{{this.id}}">
 			<div class="info has-text-centered">
-				<div class="is-size-4">{{this.name}}</div>
+				<div class="is-size-4">
+					<a href="{{../websiteRoot}}/arena/team/{{../realm}}/{{this.name}}">{{this.name}}</a>
+				</div>
 				<div class="is-size-5">{{this.type}}v{{this.type}} Team</div>
 				<div>Rating: {{this.rating}}</div>
 				<div>{{this.seasonWins}} W / {{subtract this.seasonGames this.seasonWins}} L</div>

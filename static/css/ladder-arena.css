@@ -1,0 +1,8 @@
+#select-arena-type-container {
+	display: flex;
+}
+
+#select-arena-type-container .arena-type-label {
+	align-self: center;
+	margin-right: 4px;
+}
