@@ -1,4 +1,5 @@
 <!-- SHIELDS -->
+[![Build](https://github.com/r-o-b-o-t-o/azerothcore-armory/actions/workflows/build.yml/badge.svg)](https://github.com/r-o-b-o-t-o/azerothcore-armory/actions/workflows/build.yml)
 [![Stargazers][stars-shield]][stars-url]
 [![Forks][forks-shield]][forks-url]
 [![Issues][issues-shield]][issues-url]
