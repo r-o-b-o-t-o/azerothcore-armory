@@ -58,7 +58,7 @@ export class ArenaController {
 
 		const teamData = await this.getTeamData(realm, teamName);
 		if (teamData === null) {
-			// Could not find guild
+			// Could not find team
 			return next(404);
 		}
 
