@@ -315,7 +315,7 @@ Distributed under the MIT License. See the [`LICENSE`][license-url] file for mor
 <!-- CONTACT -->
 ## Contact
 
-<img src="https://img.shields.io/badge/Discord-5865F2?style=flat&logo=discord&logoColor=white"/> Feel free to get in touch with me on Discord: `Roboto#9185`
+<img src="https://img.shields.io/badge/Discord-5865F2?style=flat&logo=discord&logoColor=white"/> Feel free to get in touch with me on Discord: `roboto_`
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
