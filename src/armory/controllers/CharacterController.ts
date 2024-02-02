@@ -383,6 +383,9 @@ export class CharacterController {
 		});
 
 		const data = rows as RowDataPacket[] as IEquipmentData[];
+		if (data.length === 0) {
+			return [];
+		}
 
 		for (const row of data) {
 			const item = await this.armory.dbc.item().find((item) => item.id === row.itemEntry);
