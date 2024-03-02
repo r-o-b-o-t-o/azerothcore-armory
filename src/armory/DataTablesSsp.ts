@@ -67,8 +67,8 @@ export class DataTablesSsp {
 	private joinSql = "";
 
 	public constructor(query: Query, db: Pool, table: string, primaryKey: string, columnSettings: IColumnSettings[]) {
-		this.start = parseInt(query.start as string, 10);
-		this.length = parseInt(query.length as string, 10);
+		this.start = Math.max(0, parseInt(query.start as string, 10));
+		this.length = Math.min(100, Math.max(0, parseInt(query.length as string, 10)));
 		this.draw = parseInt(query.draw as string, 10);
 		this._order = (query.order as { column: string; dir: string }[]).map((order) => {
 			return { column: parseInt(order.column, 10), dir: order.dir };
