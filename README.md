@@ -118,14 +118,7 @@ I also noticed that such a tool was frequently requested in the AzerothCore Disc
 	```
 3. Configure the application: copy `config.default.json` to `config.json` or `.env.example` to `.env` and edit the resulting file.  
 	See the [Configuration Reference](#configuration-reference) below for a description of all values.
-4. Download the model viewer's data:
-	* Download from script:
-		```sh
-		npm run build
-		npm run fetchdata
-		```
-		**OR**
-	* Download the latest archive (`data.zip`) from the [Releases](https://github.com/r-o-b-o-t-o/azerothcore-armory/releases) page and extract it to the `data/` directory.
+4. Download the model viewer's data from the [Releases](https://github.com/r-o-b-o-t-o/azerothcore-armory/releases) page and extract it to the `data/` directory.
 
 ### Configuration Reference
 
@@ -185,7 +178,6 @@ Open a web browser and navigate to http://localhost:48733
 Other useful npm scripts:
 * `npm run clean`: cleans the build directory
 * `npm run watch`: watches for changes and rebuilds automatically, useful for development
-* `npm run fetchdata`: downloads the data needed by the 3D model viewer
 * `npm run cleardata`: clears the data downloaded for the 3D model viewer
 
 ### With Docker
