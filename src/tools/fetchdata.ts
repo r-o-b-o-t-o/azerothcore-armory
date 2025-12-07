@@ -389,8 +389,9 @@ async function parseModels(): Promise<void> {
 
 			const texturesOffset = buffer.readUInt32LE(60);
 			const uncompressedSize = buffer.readUInt32LE(112);
-			const compressedData = buffer.slice(116);
-			const data = Buffer.from(pako.inflate(compressedData));
+            const compressedData = buffer.slice(116);
+            const inflated = pako.inflate(new Uint8Array(compressedData));
+            const data = Buffer.from(inflated);
 			if (data.length !== uncompressedSize) {
 				throw `Unexpected data size ${data.length}, expected ${uncompressedSize}`;
 			}
