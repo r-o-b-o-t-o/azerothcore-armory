@@ -165,7 +165,9 @@
 		}
 		$("#cb-hide-transmogs").change(() => {
 			const hide = $("#cb-hide-transmogs").prop("checked");
-			const items = hide ? charData.characterModelItems : charData.characterModelTransmogs;
+			const items = hide || !Array.isArray(charData.characterModelTransmogs)
+				? charData.characterModelItems
+				: charData.characterModelTransmogs;
 			for (const slot of (items.map((item) => item[0]))) {
 				clearSlots([slot]);
 			}
@@ -194,8 +196,8 @@
 
 		function setSlotVisible(slot, visible) {
 			if (visible) {
-				const transmogged = !$("#cb-hide-transmogs").prop("checked");
-				const items = transmogged ? charData.characterModelTransmogs : charData.characterModelItems;
+				const useTransmog = !$("#cb-hide-transmogs").prop("checked") && Array.isArray(charData.characterModelTransmogs);
+				const items = useTransmog ? charData.characterModelTransmogs : charData.characterModelItems;
 				const item = items.find(([sl, appearance]) => sl === slot);
 				if (item !== undefined) {
 					if (item[1] === -1) {
@@ -408,9 +410,9 @@
 
 		const characterModel = {
 			type: ZamModelViewer.WOW,
-			contentPath: "{{ contentPath }}",
+            contentPath: "{{ contentPath }}",
 			container: $model,
-			hd: true,
+            hd: false,
 			aspect: $model.outerWidth() / $model.outerHeight(),
 			charCustomization: {
 				race: charData.race,
