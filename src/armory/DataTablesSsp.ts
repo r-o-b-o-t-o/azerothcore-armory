@@ -71,7 +71,8 @@ export class DataTablesSsp {
 		this.length = Math.min(100, Math.max(0, parseInt(query.length as string, 10)));
 		this.draw = parseInt(query.draw as string, 10);
 		this._order = (query.order as { column: string; dir: string }[]).map((order) => {
-			return { column: parseInt(order.column, 10), dir: order.dir };
+			const dir = order.dir.toUpperCase() === "DESC" ? "DESC" : "ASC";
+			return { column: parseInt(order.column, 10), dir };
 		});
 		this.columns = (
 			query.columns as { data: string; name: string; searchable: string; orderable: string; search: { value: string; regex: string } }[]
