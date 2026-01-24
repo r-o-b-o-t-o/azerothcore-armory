@@ -342,20 +342,42 @@ export class CharacterController {
 
 	private async getCharacterData(realm: IRealmConfig, character: string | number): Promise<ICharacterData> {
 		const where = typeof character === "string" ? "LOWER(`characters`.`name`) = LOWER(?)" : "`characters`.`guid` = ?";
-		const [rows] = await this.armory.getCharactersDb(realm.name).query({
-			sql: `
-				SELECT \`characters\`.\`guid\`, \`characters\`.\`name\`, \`race\`, \`class\`, \`gender\`, \`level\`, \`skin\`, \`face\`, \`hairStyle\`, \`hairColor\`, \`facialStyle\`, \`playerFlags\`, \`online\`, \`guild\`.\`name\` AS \`guild\`
-				FROM \`characters\`
-				LEFT JOIN \`guild_member\` ON \`guild_member\`.\`guid\` = \`characters\`.\`guid\`
-				LEFT JOIN \`guild\` ON \`guild\`.\`guildid\` = \`guild_member\`.\`guildid\`
-				LEFT JOIN \`${realm.authDatabase}\`.\`account_access\` ON \`account_access\`.\`id\` = \`characters\`.\`account\` AND \`account_access\`.\`RealmID\` IN (-1, ${realm.realmId}) AND \`account_access\`.\`gmlevel\` > 0
-				WHERE
-					${where}
-					AND (\`account_access\`.\`id\` IS NULL OR ? = 0)
-			`,
-			values: [character, this.armory.config.hideGameMasters ? 1 : 0],
-			timeout: this.armory.config.dbQueryTimeout,
-		});
+                const baseQuery = `
+                SELECT \`characters\`.\`guid\`, \`characters\`.\`name\`, \`race\`, \`class\`, \`gender\`, \`level\`, \`skin\`, \`face\`, \`hairStyle\`, \`hairColor\`, \`facialStyle\`, \`playerFlags\`, \`online\`, \`guild\`.\`name\` AS \`guild\`
+                        FROM \`characters\`
+                        LEFT JOIN \`guild_member\` ON \`guild_member\`.\`guid\` = \`characters\`.\`guid\`
+                        LEFT JOIN \`guild\` ON \`guild\`.\`guildid\` = \`guild_member\`.\`guildid\`
+                `;
+		let additionalSql = '';
+                const queryParams: any[] = [character];
+
+		if (this.armory.config.hideGameMasters) {
+		        additionalSql = `
+		            LEFT JOIN \`${realm.authDatabase}\`.\`account_access\` ON \`account_access\`.\`id\` = \`characters\`.\`account\` AND \`account_access\`.\`RealmID\` IN (-1, ${realm.realmId}) AND \`account_access\`.\`gmlevel\` > 0
+		            WHERE
+		                ${typeof character === "string"
+		                    ? "LOWER(`characters`.`name`) = LOWER(?)"
+		                    : "`characters`.`guid` = ?"
+		                }
+		                AND (\`account_access\`.\`id\` IS NULL OR ? = 0)
+		        `;
+		        queryParams.push(1); // Hide GMs
+		    } else {
+		        additionalSql = `
+                           WHERE
+                               ${typeof character === "string"
+                    ? "LOWER(`characters`.`name`) = LOWER(?)"
+                                : "`characters`.`guid` = ?"
+                		}
+        		`;
+                         queryParams.push(0); // No GM filter
+                }
+                const sql = baseQuery + additionalSql;
+                const [rows] = await this.armory.getCharactersDb(realm.name).query({
+        		sql,
+        		values: queryParams,
+        		timeout: this.armory.config.dbQueryTimeout,
+    		});
 
 		if ((rows as RowDataPacket[]).length === 0) {
 			return null;
