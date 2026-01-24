@@ -5,9 +5,11 @@ node_modules/
 build/
 
 # Downloaded data files
-data/*
+# Ignore all generated/cached assets under data
+data/**
+# Keep only the local background image and optional CSVs tracked
+!data/modelviewer-background.png
 !data/*.csv
-!data/*.png
 
 # Configuration
 config.json
