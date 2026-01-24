@@ -1,0 +1,167 @@
+<link rel="stylesheet" type="text/css" href="{{websiteRoot}}/css/character-quests.css">
+{{> icons }}
+<script type="application/javascript">
+    const aowow_tooltips = { "renamelinks": true, };
+</script>
+
+{{> character-header }}
+
+<div class="quest-compare-section" style="margin-bottom: 20px;">
+    <div class="field is-horizontal">
+        <div class="field-label is-normal">
+            <label class="label">Compare with:</label>
+        </div>
+        <div class="field-body">
+            <div class="field has-addons">
+                <div class="control is-expanded">
+                    <div class="select is-fullwidth">
+                        <select id="compareCharacter">
+                            <option value="">Select a character...</option>
+                            {{#each data.otherCharacters}}
+                            <option value="{{this.realmName}}/{{this.name}}" 
+                                    {{#if (eq this.realmName ../data.char2.realm)}}
+                                        {{#if (eq this.name ../data.char2.name)}}
+                                            selected
+                                        {{/if}}
+                                    {{/if}}>
+                                {{this.name}}
+                            </option>
+                            {{/each}}
+                        </select>
+                    </div>
+                </div>
+                <div class="control">
+                    <button class="button is-info" id="compareButton" disabled>
+                        Compare Quests
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="quest-comparison-header">
+    <h2>Quest Comparison</h2>
+    <div class="characters">
+        <span class="char1">
+                {{#if (eq data.char2.realm data.char1.realm)}}
+                    {{data.char1.name}}
+                {{else}}
+                    {{data.char1.realm}}/{{data.char1.name}}
+                {{/if}}
+            </span>
+        vs
+        <span class="char2">
+            <a href="{{websiteRoot}}/character/{{data.char2.realm}}/{{data.char2.name}}/quests/compare/{{data.char1.realm}}/{{data.char1.name}}">
+                {{#if (eq data.char2.realm data.char1.realm)}}
+                    {{data.char2.name}}
+                {{else}}
+                    {{data.char2.realm}}/{{data.char2.name}}
+                {{/if}}
+            </a>
+        </span>
+    </div>
+</div>
+
+{{! Add this section before the categories loop }}
+<div class="quests-table" style="margin-bottom: 20px;">
+    <h2 class="is-size-4 category-header collapsible expanded">
+        Active Quests
+        <span class="collapse-icon">▼</span>
+    </h2>
+    
+    <div class="category-content expanded">
+        <table class="table is-striped is-hoverable is-fullwidth">
+            <thead>
+                <tr>
+                    <th>Quest</th>
+                    <th>Area (Level)</th>
+                    <th>{{data.char1.name}}</th>
+                    <th>{{data.char2.name}}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#each (getActiveQuests data.categories)}}
+                <tr class="{{getDiffClass this}}">
+                    <td class="quest-name">
+                        <a href="{{@root.wowhead}}/quest={{this.id}}">{{this.title}}</a>
+                    </td>
+                    <td class="quest-level">{{this.category}} ({{this.questLevel}})</td>
+                    <td class="quest-status {{this.char1Status}}">{{this.char1Status}}</td>
+                    <td class="quest-status {{this.char2Status}}">{{this.char2Status}}</td>
+                </tr>
+                {{/each}}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{{#each data.categories as |quests category|}}
+<div class="quests-table" style="margin-bottom: 20px;">
+    <h2 class="is-size-4 category-header collapsible">
+        {{@key}}
+        {{#with (getDiffCount this)}}
+            {{#if this}}
+                <span class="diff-count">({{this}} different)</span>
+            {{/if}}
+        {{/with}}
+        <span class="collapse-icon">▼</span>
+    </h2>
+    
+    <div class="category-content">
+        <table class="table is-striped is-hoverable is-fullwidth">
+            <thead>
+                <tr>
+                    <th>Quest</th>
+                    <th>Level</th>
+                    <th>{{../data.char1.name}}</th>
+                    <th>{{../data.char2.name}}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#each this}}
+                <tr class="{{getDiffClass this}}">
+                    <td class="quest-name">
+                        <a href="{{@root.wowhead}}/quest={{this.id}}">{{this.title}}</a>
+                    </td>
+                    <td class="quest-level">{{this.questLevel}}</td>
+                    <td class="quest-status {{this.char1Status}}">{{this.char1Status}}</td>
+                    <td class="quest-status {{this.char2Status}}">{{this.char2Status}}</td>
+                </tr>
+                {{/each}}
+            </tbody>
+        </table>
+    </div>
+</div>
+{{/each}}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.collapsible').forEach(header => {
+        header.addEventListener('click', function() {
+            const content = this.nextElementSibling;
+            content.classList.toggle('expanded');
+            this.classList.toggle('expanded');
+        });
+    });
+
+    const compareSelect = document.getElementById('compareCharacter');
+    const compareButton = document.getElementById('compareButton');
+
+    compareSelect.addEventListener('change', function() {
+        compareButton.disabled = !compareSelect.value;
+    });
+
+    compareButton.addEventListener('click', function() {
+        const selected = compareSelect.value;
+        if (selected) {
+            const [realm, name] = selected.split('/');
+            // Get the base path by removing everything after /quests/compare/
+            const basePath = window.location.pathname.split('/quests/compare/')[0];
+            const safeRealm = encodeURIComponent(realm);
+            const safeName = encodeURIComponent(name);
+            window.location.href = `${basePath}/quests/compare/${safeRealm}/${safeName}`;
+        }
+    });
+});
+</script>

@@ -1,0 +1,108 @@
+.reputation-table {
+    max-width: 500px;
+    width: 100%;
+}
+
+.reputation-table h2 {
+    color: #FFD700; /* Gold color for section titles */
+}
+
+.reputation-row {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.faction-name {
+    min-width: 150px;
+    font-weight: bold;
+    color: white; /* White color for faction names */
+}
+
+.progress-section {
+    flex: 1;
+    display: flex;
+    gap: 10px;
+}
+
+.progress-bar-container {
+    flex: 1;
+    background-color: #020018;
+    border-radius: 5px;
+    overflow: hidden;
+    height: 20px;
+    position: relative;
+}
+
+.progress-bar-container:hover .standing-text {
+    display: none;
+}
+
+.progress-bar-container:hover .value-text {
+    display: block;
+}
+
+.progress-bar {
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+/* Reputation colors */
+.progress-bar.Neutral {
+    background-color: #B8A44A; /* More muted yellow */
+}
+
+.progress-bar.Friendly,
+.progress-bar.Honored,
+.progress-bar.Revered,
+.progress-bar.Exalted {
+    background-color: #4CAF50; /* More muted green */
+}
+
+.progress-bar.Hostile,
+.progress-bar.Hated {
+    background-color: #D32F2F; /* More muted red */
+}
+
+.progress-text {
+    position: absolute;
+    top: 50%;
+    left: 10px;
+    transform: translateY(-50%);
+    z-index: 2;
+    color: white;
+    font-weight: bold;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.standing-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 2;
+    color: white;
+    text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.7);
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.value-text {
+    display: none;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 2;
+    color: white;
+    text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.7);
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.gold-text {
+    color: #FFD700;
+}

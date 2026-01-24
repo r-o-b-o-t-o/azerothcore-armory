@@ -23,8 +23,15 @@ export interface IIframeModeConfig {
 	url: string;
 }
 
+export interface IFeatureFlags {
+	enableQuestsPage: boolean;
+	enableReputationPage: boolean;
+	enableSkillsPage: boolean;
+}
+
 export class Config {
 	public aowowUrl: string;
+	public wowheadUrl: string;
 	public websiteUrl: string;
 	public websiteName: string;
 	public websiteRoot: string;
@@ -36,6 +43,7 @@ export class Config {
 	public realms: IRealmConfig[];
 	public worldDatabase: IDatabaseConfig;
 	public dbQueryTimeout: number;
+	public featureFlags: IFeatureFlags;
 
 	private static envPrefix = "ACORE_ARMORY";
 	private static checkedMissingField = false;

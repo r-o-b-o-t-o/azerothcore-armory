@@ -14,6 +14,7 @@ import { IndexController } from "./controllers/IndexController";
 import { CharacterController } from "./controllers/CharacterController";
 import { GuildController } from "./controllers/GuildController";
 import { ArenaController } from "./controllers/ArenaController";
+import { IQuest, IQuestComparison } from './types/QuestTypes';
 
 export class Armory {
 	public characterCustomization: CharacterCustomization;
@@ -81,6 +82,7 @@ export class Armory {
 
 		const locals = {
 			aowow: this.config.aowowUrl,
+			wowhead: this.config.wowheadUrl,
 			websiteUrl: this.config.websiteUrl,
 			websiteName: this.config.websiteName,
 			websiteRoot: this.config.websiteRoot,
@@ -101,6 +103,45 @@ export class Armory {
 				helpers: {
 					// eslint-disable-next-line @typescript-eslint/no-var-requires
 					...require("handlebars-helpers")(),
+					hasInProgressQuests: function(quests: IQuest[]): boolean {
+						return quests.some(quest => quest.status === 'In Progress');
+					},
+					getDiffClass: function(quest: IQuestComparison): string {
+						if (!quest.char1Status && !quest.char2Status) return '';
+						if (!quest.char1Status) return 'quest-missing-1';
+						if (!quest.char2Status) return 'quest-missing-2';
+						if (quest.char1Status !== quest.char2Status) return 'quest-diff';
+						return '';
+					},
+					getDiffCount: function(quests: IQuestComparison[]): number {
+						return quests.reduce((count, quest) => {
+							if (!quest.char1Status && quest.char2Status) return count + 1;
+							if (quest.char1Status && !quest.char2Status) return count + 1;
+							if (quest.char1Status !== quest.char2Status) return count + 1;
+							return count;
+						}, 0);
+					},
+					getActiveQuests: function(categories: { [key: string]: IQuestComparison[] }): (IQuestComparison & { category: string })[] {
+						const activeQuests: (IQuestComparison & { category: string })[] = [];
+						Object.entries(categories).forEach(([category, quests]) => {
+							quests.forEach(quest => {
+								if (quest.char1Status === 'In Progress' || quest.char2Status === 'In Progress') {
+									activeQuests.push({
+										...quest,
+										category
+									});
+								}
+							});
+						});
+						return activeQuests.sort((a, b) => {
+							// First sort by category
+							const categoryCompare = a.category.localeCompare(b.category);
+							if (categoryCompare !== 0) return categoryCompare;
+							
+							// Then by title within same category
+							return a.title.localeCompare(b.title);
+						});
+					}
 				},
 			}),
 		);
@@ -150,9 +191,19 @@ export class Armory {
 		await charsController.load();
 		app.get("/character/:realm/:name", this.wrapRoute(charsController.character.bind(charsController)));
 		app.get("/character/:realm/:name/talents", this.wrapRoute(charsController.talents.bind(charsController)));
+		if (this.config.featureFlags.enableSkillsPage) {
+			app.get("/character/:realm/:name/skills", this.wrapRoute(charsController.skills.bind(charsController)));
+		}
 		app.get("/character/:realm/:name/achievements", this.wrapRoute(charsController.achievements.bind(charsController)));
 		app.get("/character/:realm/:character/achievements/data", this.wrapRoute(charsController.achievementsData.bind(charsController)));
 		app.get("/character/:realm/:name/pvp", this.wrapRoute(charsController.pvp.bind(charsController)));
+		if (this.config.featureFlags.enableReputationPage) {
+			app.get("/character/:realm/:name/reputation", this.wrapRoute(charsController.reputation.bind(charsController)));
+		}
+		if (this.config.featureFlags.enableQuestsPage) {
+			app.get("/character/:realm/:name/quests", this.wrapRoute(charsController.quests.bind(charsController)));
+			app.get("/character/:realm/:name/quests/compare/:otherRealm/:otherName", this.wrapRoute(charsController.questsCompare.bind(charsController)));
+		}
 
 		const guildsController = new GuildController(this);
 		app.get("/guild/:realm/:name", this.wrapRoute(guildsController.guild.bind(guildsController)));

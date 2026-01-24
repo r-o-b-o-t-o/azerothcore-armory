@@ -3,6 +3,15 @@
 
 <a href="{{websiteRoot}}/character/{{realm}}/{{name}}">Character</a>&emsp;
 <a href="{{websiteRoot}}/character/{{realm}}/{{name}}/talents">Talents</a>&emsp;
+{{#if enableSkillsPage}}
+<a href="{{websiteRoot}}/character/{{realm}}/{{name}}/skills">Skills</a>&emsp;
+{{/if}}
+{{#if enableReputationPage}}
+<a href="{{websiteRoot}}/character/{{realm}}/{{name}}/reputation">Reputation</a>&emsp;
+{{/if}}
+{{#if enableQuestsPage}}
+<a href="{{websiteRoot}}/character/{{realm}}/{{name}}/quests">Quests</a>&emsp;
+{{/if}}
 <a href="{{websiteRoot}}/character/{{realm}}/{{name}}/achievements">Achievements</a>&emsp;
 <a href="{{websiteRoot}}/character/{{realm}}/{{name}}/pvp">PvP</a>&emsp;
 <br>
@@ -20,10 +29,15 @@
 <div class="char-realm">{{realm}}</div>
 <div>
 	{{#if online}}
-	Online 🟢
+	Online 🟢 
 	{{else}}
-	Offline 🔴
+	Offline 🔴 
 	{{/if}}
+	<a href="{{wowhead}}/zone={{zone}}">
+		{{#if zoneName}}
+		{{zoneName}}
+		{{/if}}
+	</a>
 </div>
 
 <br>

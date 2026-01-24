@@ -1,5 +1,6 @@
 {
 	"aowowUrl": "https://wowgaming.altervista.org/aowow",
+	"wowheadUrl": "https://www.wowhead.com/wotlk",
 	"websiteUrl": "https://mywebsite.com",
 	"websiteName": "My Website",
 	"websiteRoot": "",
@@ -32,5 +33,10 @@
 		"password": "acore",
 		"database": "acore_world"
 	},
-	"dbQueryTimeout": 10000
+	"dbQueryTimeout": 10000,
+	"featureFlags": {
+		"enableQuestsPage": true,
+		"enableReputationPage": true,
+		"enableSkillsPage": true
+	}
 }

@@ -1,0 +1,82 @@
+<link rel="stylesheet" type="text/css" href="{{websiteRoot}}/css/character-reputation.css">
+{{> icons }}
+<script type="application/javascript">
+    const aowow_tooltips = { "renamelinks": true, };
+</script>
+
+{{> character-header }}
+
+<div class="reputation-table" style="margin-bottom: 20px;">
+    <h2 class="is-size-4">Classic Reputations</h2>
+    <table class="table is-striped is-hoverable is-fullwidth">
+        <tbody>
+            {{#each data.classic}}
+            <tr>
+                <!-- Faction ID: {{this.id}} -->
+                <td>
+                    <div class="reputation-row">
+                        <span class="faction-name">{{this.name}}</span>
+                        <div class="progress-section">
+                            <div class="progress-bar-container">
+                                <div class="progress-bar {{this.standing}}" style="width: {{multiply (divide this.valueInGrade this.max) 100}}%;"></div>
+                                <span class="standing-text">{{this.standing}}</span>
+                                <span class="value-text">{{this.valueInGrade}} / {{this.max}}</span>
+                            </div>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+            {{/each}}
+        </tbody>
+    </table>
+</div>
+
+<div class="reputation-table" style="margin-bottom: 20px;">
+    <h2 class="is-size-4">The Burning Crusade</h2>
+    <table class="table is-striped is-hoverable is-fullwidth">
+        <tbody>
+            {{#each data.tbc}}
+            <tr>
+                <!-- Faction ID: {{this.id}} -->
+                <td>
+                    <div class="reputation-row">
+                        <span class="faction-name">{{this.name}}</span>
+                        <div class="progress-section">
+                            <div class="progress-bar-container">
+                                <div class="progress-bar {{this.standing}}" style="width: {{multiply (divide this.valueInGrade this.max) 100}}%;"></div>
+                                <span class="standing-text">{{this.standing}}</span>
+                                <span class="value-text">{{this.valueInGrade}} / {{this.max}}</span>
+                            </div>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+            {{/each}}
+        </tbody>
+    </table>
+</div>
+
+<div class="reputation-table" style="margin-bottom: 20px;">
+    <h2 class="is-size-4">Wrath of the Lich King</h2>
+    <table class="table is-striped is-hoverable is-fullwidth">
+        <tbody>
+            {{#each data.wotlk}}
+            <tr>
+                <!-- Faction ID: {{this.id}} -->
+                <td>
+                    <div class="reputation-row">
+                        <span class="faction-name">{{this.name}}</span>
+                        <div class="progress-section">
+                            <div class="progress-bar-container">
+                                <div class="progress-bar {{this.standing}}" style="width: {{multiply (divide this.valueInGrade this.max) 100}}%;"></div>
+                                <span class="standing-text">{{this.standing}}</span>
+                                <span class="value-text">{{this.valueInGrade}} / {{this.max}}</span>
+                            </div>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+            {{/each}}
+        </tbody>
+    </table>
+</div>

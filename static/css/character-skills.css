@@ -1,0 +1,121 @@
+#talent-template,
+#talent-tree-template {
+	display: none;
+}
+
+.iconmedium.empty .icon-border {
+	background-position: 0px 0px;
+}
+
+.iconmedium.empty .icon {
+	filter: grayscale(100%);
+	opacity: 0.7;
+}
+
+.iconmedium.notfull .icon-border {
+	background-position: -84px 0px;
+}
+
+.iconmedium.full .icon-border {
+	background-position: -42px 0px;
+}
+
+.iconmedium .icon-border {
+	width: 42px;
+	height: 42px;
+	position: absolute;
+	left: 1px;
+	top: 1px;
+	background-repeat: no-repeat;
+}
+
+.iconmedium a span {
+	display: none;
+}
+
+.iconmedium::after {
+	content: attr(rank);
+	background-color: black;
+	position: absolute;
+	top: 30px;
+	left: 30px;
+	font-size: 14px;
+	padding: 0px 2px;
+	z-index: 4;
+}
+
+.iconmedium.empty::after {
+	display: none;
+}
+
+.iconmedium.full::after,
+.iconmedium.notfull::after {
+	border-radius: 4px;
+	cursor: default;
+	user-select: none;
+	pointer-events: none;
+}
+
+.iconmedium.notfull::after {
+	color: #30ec30;
+	border: 1px solid #30ec30;
+}
+
+.iconmedium.full::after {
+	color: #ffcf00;
+	border: 1px solid #ffcf00;
+}
+
+.skills-table {
+	max-width: 500px; /* Maximum width for the table */
+	width: 100%; /* Allows the table to shrink responsively */
+}
+
+.skills-table table {
+	width: 100%; /* Ensures all tables inside .skills-table are the same width */
+	table-layout: fixed; /* Ensures consistent column widths */
+}
+
+.skills-table th,
+.skills-table td {
+    width: 33.33%;
+}
+
+.progress-bar-container {
+    width: 100%;
+    background-color: #020018;
+    border-radius: 5px;
+    overflow: hidden;
+    height: 20px;
+	position: relative; /* Enables positioning of child elements */
+}
+
+.progress-bar {
+    height: 100%;
+    background-color: #000852;
+	position: absolute; /* Allows the bar to stay behind the text */
+    width: 0%;
+    transition: width 0.3s ease;
+	z-index: 1; /* Ensures the bar is behind the text */
+}
+
+.progress-text {
+    position: absolute; /* Positions the text over the bar */
+    top: 50%; /* Centers the text vertically */
+    left: 10px; /* Aligns the text to the left with some padding */
+    transform: translateY(-50%); /* Vertically centers the text */
+    z-index: 2; /* Ensures the text is above the bar */
+    color: white; /* Makes the text visible on the bar */
+    font-weight: bold;
+    font-size: 12px;
+    white-space: nowrap; /* Prevents text from wrapping */
+}
+
+#spec-links {
+	margin-bottom: 32px;
+}
+
+.gold-text {
+    color: #FFD700; /* Gold color */
+    font-weight: bold; /* Optional: Make the text bold */
+}

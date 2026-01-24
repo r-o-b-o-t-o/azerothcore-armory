@@ -4,7 +4,7 @@ import { RowDataPacket } from "mysql2/promise";
 import { Armory } from "../Armory";
 import { IRealmConfig } from "../Config";
 import { IEmblem, Utils } from "../Utils";
-import { IAchievement as IAchievementDbc } from "../data/DbcReader";
+import { IAchievement as IAchievementDbc, ISkillDbc, IAreas } from "../data/DbcReader";
 
 interface ICharacterData {
 	guid: number;
@@ -21,6 +21,11 @@ interface ICharacterData {
 	playerFlags: number;
 	online: number;
 	guild: string;
+	map: number;
+	zone: number;
+	zoneName: string;
+	position_x: number;
+	position_y: number;
 }
 
 interface IEquipmentData {
@@ -72,6 +77,33 @@ interface IArenaTeam {
 	emblem?: IEmblem;
 }
 
+interface ISkills {
+	id: number;
+	categoryId: number
+	skill: string;
+	value: number;
+	max: number ;
+}
+
+interface IReputation {
+	id: number;
+	name: string;
+	standing: string;
+	value: number;
+	valueInGrade: number;
+	max: number;
+	expansionId: number;
+}
+
+interface IQuest {
+	id: number;
+	title: string;
+	status: 'Completed' | 'In Progress';
+	minLevel: number;
+	questLevel: number;
+	questSortID: number;
+}
+
 const ItemClassGem = 3;
 const SpellMechanicMounted = 21;
 const RaceDisplayName = {
@@ -101,6 +133,7 @@ const ClassDisplayName = {
 
 export class CharacterController {
 	private armory: Armory;
+	private areaById: { [key: number]: IAreas };
 	private itemInventoryTypes: { [key: number]: number };
 	private itemIcons: { [key: number]: number };
 	private gemItems: { [key: number]: boolean };
@@ -108,6 +141,7 @@ export class CharacterController {
 	private itemSocketBonuses: { [key: number]: number };
 	private mountSpells: number[];
 	private mountBySpellId: { [key: number]: IMount };
+	private skillById: { [key: number]: ISkillDbc };
 	private achievementById: { [key: number]: IAchievementDbc };
 
 	public constructor(armory: Armory) {
@@ -179,6 +213,15 @@ export class CharacterController {
 		this.achievementById = {};
 		for await (const achievement of this.armory.dbc.achievement()) {
 			this.achievementById[achievement.id] = achievement;
+		}
+
+		this.skillById = {};
+		for await (const skill of this.armory.dbc.skill()) {
+			this.skillById[skill.id] = skill;
+		}
+		this.areaById = {};
+		for await (const area of this.armory.dbc.areas()) {
+			this.areaById[area.id] = area;
 		}
 	}
 
@@ -255,6 +298,413 @@ export class CharacterController {
 				glyphs: await this.getGlyphs(realm.name, charData.guid),
 			},
 		});
+	}
+
+	public async skills(req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> {
+		const realmName = req.params.realm;
+		const charName = req.params.name;
+
+		const realm = this.armory.getRealm(realmName);
+		if (realm === undefined) {
+			// Could not find realm
+			return next(404);
+		}
+
+		const charData = await this.getCharacterData(realm, charName);
+		if (charData === null) {
+			// Could not find character
+			return next(404);
+		}
+		const skills = await this.getSkills(realm.name, charData.guid);
+		const professions = skills.filter((skill) => skill.categoryId === 11);
+		const secondarySkills = skills.filter((skill) => skill.categoryId === 9);
+		const weaponSkills = skills.filter((skill) => skill.categoryId === 6);
+		const classSkills = skills.filter((skill) => skill.categoryId === 7);
+		const armorSkills = skills.filter((skill) => skill.categoryId === 8);
+		const languages = skills.filter((skill) => skill.categoryId === 10);
+		res.render("character-skills.hbs", {
+			title: `Armory - ${charData.name} - Skills`,
+			...this.makeSharedDataObject(realm, charData),
+			data: {
+				skills: skills,
+				professions: professions,
+				secondarySkills: secondarySkills,
+				weaponSkills: weaponSkills,
+				classSkills: classSkills,
+				armorSkills: armorSkills,
+				languages: languages,
+			},
+		});
+	}
+
+	public async reputation(req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> {
+		const realmName = req.params.realm;
+		const charName = req.params.name;
+
+		const realm = this.armory.getRealm(realmName);
+		if (realm === undefined) {
+			return next(404);
+		}
+
+		const charData = await this.getCharacterData(realm, charName);
+		if (charData === null) {
+			return next(404);
+		}
+
+		const reputations = await this.getReputations(realm.name, charData.guid);
+		// Group reputations by expansion/category
+		const classicReps = reputations.filter(rep => rep.expansionId === 0);
+		const tbcReps = reputations.filter(rep => rep.expansionId === 1);
+		const wotlkReps = reputations.filter(rep => rep.expansionId === 2);
+
+		res.render("character-reputation.hbs", {
+			title: `Armory - ${charData.name} - Reputation`,
+			...this.makeSharedDataObject(realm, charData),
+			data: {
+				classic: classicReps,
+				tbc: tbcReps,
+				wotlk: wotlkReps
+			},
+		});
+	}
+
+	public async quests(req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> {
+		const realmName = req.params.realm;
+		const charName = req.params.name;
+
+		const realm = this.armory.getRealm(realmName);
+		if (realm === undefined) {
+			return next(404);
+		}
+
+		const charData = await this.getCharacterData(realm, charName);
+		if (charData === null) {
+			return next(404);
+		}
+
+		const quests = await this.getQuests(realm.name, charData.guid);
+		
+		// Group quests by zone/profession
+		const questsByCategory = quests.reduce((acc, quest) => {
+			const category = quest.questSortID > 0 ? 
+				this.getZoneName(quest.questSortID): 
+				this.getProfessionName(quest.questSortID);
+			
+			if (!acc[category]) {
+				acc[category] = [];
+			}
+			acc[category].push(quest);
+			return acc;
+		}, {});
+
+		// Get list of all characters
+		const allCharacters = await this.getAllCharacters(realm.name);
+
+		res.render("character-quests.hbs", {
+			title: `Armory - ${charData.name} - Quests`,
+			...this.makeSharedDataObject(realm, charData),
+			data: {
+				categories: questsByCategory,
+				otherCharacters: allCharacters.filter(c => c.guid !== charData.guid)
+			},
+		});
+	}
+
+	public async questsCompare(req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> {
+		const realmName = req.params.realm;
+		const charName = req.params.name;
+		const otherRealmName = req.params.otherRealm;
+		const otherCharName = req.params.otherName;
+
+		const realm = this.armory.getRealm(realmName);
+		const otherRealm = this.armory.getRealm(otherRealmName);
+		if (realm === undefined || otherRealm === undefined) {
+			return next(404);
+		}
+
+		const charData = await this.getCharacterData(realm, charName);
+		const otherCharData = await this.getCharacterData(otherRealm, otherCharName);
+		if (charData === null || otherCharData === null) {
+			return next(404);
+		}
+
+		const charQuests = await this.getQuests(realm.name, charData.guid);
+		const otherQuests = await this.getQuests(otherRealm.name, otherCharData.guid);
+
+		// Group quests by category
+		interface IQuestComparison {
+			id: number;
+			title: string;
+			questLevel: number;
+			char1Status?: 'Completed' | 'In Progress';
+			char2Status?: 'Completed' | 'In Progress';
+		}
+
+		const categories: { [key: string]: IQuestComparison[] } = {};
+
+		const addQuestsToCategories = (quests: IQuest[], source: 'char1Status' | 'char2Status') => {
+			quests.forEach(quest => {
+				const category = quest.questSortID > 0 ? 
+					this.getZoneName(quest.questSortID) : 
+					this.getProfessionName(quest.questSortID);
+
+				if (!categories[category]) {
+					categories[category] = [];
+				}
+
+				const existingQuest = categories[category].find(q => q.id === quest.id);
+				if (existingQuest) {
+					existingQuest[source] = quest.status;
+					// Remove quest if both characters have completed it
+					if (existingQuest.char1Status === 'Completed' && existingQuest.char2Status === 'Completed') {
+						categories[category] = categories[category].filter(q => q.id !== quest.id);
+					}
+				} else {
+					categories[category].push({
+						id: quest.id,
+						title: quest.title,
+						questLevel: quest.questLevel,
+						[source]: quest.status
+					});
+				}
+			});
+		};
+
+		addQuestsToCategories(charQuests, 'char1Status');
+		addQuestsToCategories(otherQuests, 'char2Status');
+
+		// Get list of all characters
+		const allCharacters = await this.getAllCharacters(realm.name);
+
+		res.render("character-quests-compare.hbs", {
+			title: `Armory - Quest Compare - ${charData.name} vs ${otherCharData.name}`,
+			...this.makeSharedDataObject(realm, charData),
+			data: {
+				categories: categories,
+				char1: {
+					name: charData.name,
+					realm: realm.name
+				},
+				char2: {
+					name: otherCharData.name,
+					realm: otherRealm.name
+				},
+				otherCharacters: allCharacters.filter(c => c.guid !== charData.guid)
+			},
+		});
+	}
+
+	private async getReputations(realm: string, character: number): Promise<IReputation[]> {
+		const [rows] = await this.armory.getCharactersDb(realm).query({
+			sql: `
+				SELECT faction, standing, flags
+				FROM character_reputation
+				WHERE guid = ? 
+				AND flags NOT IN (0, 4, 8)
+				AND standing != 0
+			`,
+			values: [character],
+			timeout: this.armory.config.dbQueryTimeout,
+		});
+
+		const reputations = [];
+		for (const row of rows as RowDataPacket[]) {
+			const factionInfo = await this.armory.dbc.faction().find(f => f.id === row.faction);
+			if (factionInfo && factionInfo.reputationId >= 0) {
+				reputations.push({
+					id: row.faction,
+					name: factionInfo.name,
+					standing: this.getReputationStanding(row.standing),
+					value: row.standing,
+					valueInGrade: this.getReputationInGrade(row.standing),
+					max: this.getReputationMax(row.standing),
+					expansionId: this.getExpansionId(row.faction)
+				});
+			}
+		}
+
+		return reputations;
+	}
+
+	private getReputationStanding(value: number): string {
+		if (value < -6000) return 'Hated'; // These are probably not correct, but I don't have a character to test against
+		if (value < -3000) return 'Hostile'; // These are probably not correct, but I don't have a character to test against
+		if (value < 0) return 'Unfriendly'; // These are probably not correct, but I don't have a character to test against
+		if (value < 1000) return 'Neutral'; // These are probably not correct, but I don't have a character to test against
+		if (value < 6000) return 'Friendly';
+		if (value < 19000) return 'Honored';
+		if (value < 40000) return 'Revered';
+		return 'Exalted'; // These are probably not correct, but I don't have a character to test against
+	}
+
+	private getReputationMax(value: number): number {
+		if (value < -6000) return -6000; // These are probably not correct, but I don't have a character to test against
+		if (value < -3000) return -3000; // These are probably not correct, but I don't have a character to test against
+		if (value < 0) return 0; // These are probably not correct, but I don't have a character to test against
+		if (value < 1000) return 3000;
+		if (value < 6000) return 6000;
+		if (value < 12000) return 12000;
+		if (value < 21000) return 21000;
+		return 40000; // This might not be right, but I dont have an exalted character to test against
+	}
+
+	private getReputationInGrade(value: number): number {
+		if (value < -6000) return value + 3000; // These are probably not correct, but I don't have a character to test against
+		if (value < -3000) return value; // These are probably not correct, but I don't have a character to test against
+		if (value < 0) return value; // These are probably not correct, but I don't have a character to test against
+		if (value < 1000) return value + 2000; // These are probably not correct, but I don't have a character to test against
+		if (value < 6000) return value - 1000;
+		if (value < 12000) return value - 5900; // For some reason I needed to remove an extra 100 from this one to get it to match the client
+		if (value < 21000) return value - 16900; // For some reason I needed to remove an extra 100 from this one to get it to match the client
+		return value - 21100; // This might not be right, but I dont have an exalted character to test against
+	}
+
+	private getExpansionId(factionId: number): number {
+		// Classic factions
+		if (factionId < 900) return 0;
+		// TBC factions
+		if (factionId < 1100) return 1;
+		// WotLK factions
+		return 2;
+	}
+
+	private async getQuests(realm: string, character: number): Promise<IQuest[]> {
+		// Get completed and rewarded quests
+		const [completedRows] = await this.armory.getCharactersDb(realm).query({
+			sql: `
+				SELECT quest FROM (
+					SELECT quest FROM character_queststatus 
+					WHERE guid = ? AND status = 1
+					UNION
+					SELECT quest FROM character_queststatus_rewarded 
+					WHERE guid = ?
+				) AS completed_quests
+			`,
+			values: [character, character],
+			timeout: this.armory.config.dbQueryTimeout,
+		});
+
+		// Get in progress quests
+		const [inProgressRows] = await this.armory.getCharactersDb(realm).query({
+			sql: `
+				SELECT quest 
+				FROM character_queststatus
+				WHERE guid = ? AND status = 3
+			`,
+			values: [character],
+			timeout: this.armory.config.dbQueryTimeout,
+		});
+
+		const quests: IQuest[] = [];
+		
+		// Process completed quests
+		for (const row of completedRows as RowDataPacket[]) {
+			const questInfo = await this.getQuestInfo(row.quest);
+			if (questInfo) {
+				quests.push({
+					id: row.quest,
+					title: questInfo.title,
+					status: 'Completed',
+					minLevel: questInfo.minLevel,
+					questLevel: questInfo.questLevel,
+					questSortID: questInfo.questSortID
+				});
+			}
+		}
+
+		// Process in progress quests
+		for (const row of inProgressRows as RowDataPacket[]) {
+			const questInfo = await this.getQuestInfo(row.quest);
+			if (questInfo) {
+				quests.push({
+					id: row.quest,
+					title: questInfo.title,
+					status: 'In Progress',
+					minLevel: questInfo.minLevel,
+					questLevel: questInfo.questLevel,
+					questSortID: questInfo.questSortID
+				});
+			}
+		}
+
+		return quests;
+	}
+
+	private async getQuestInfo(questId: number): Promise<IQuest> {
+		const [rows] = await this.armory.worldDb.query({
+			sql: `
+				SELECT ID, LogTitle as title, MinLevel as minLevel, QuestLevel as questLevel, QuestSortID as questSortID
+				FROM quest_template
+				WHERE ID = ?
+			`,
+			values: [questId],
+			timeout: this.armory.config.dbQueryTimeout,
+		});
+
+		return rows[0];
+	}
+
+	private getZoneName(zoneId: number): string {
+		this.areaById[zoneId]?.zoneName;
+		return this.areaById[zoneId]?.zoneName || `Zone ${zoneId}`;
+	}
+
+	private getProfessionName(professionId: number): string {
+		const questTypes = {
+			// Negative IDs (Classes and Professions)
+			// Classes
+			"-61": "Warlock",
+			"-81": "Warrior",
+			"-82": "Shaman",
+			"-141": "Paladin",
+			"-161": "Mage",
+			"-162": "Rogue",
+			"-261": "Hunter",
+			"-262": "Priest",
+			"-263": "Druid",
+			"-372": "Death Knight",
+			// Professions
+			"-24": "Herbalism",
+			"-101": "Fishing",
+			"-121": "Blacksmithing",
+			"-181": "Alchemy",
+			"-182": "Leatherworking",
+			"-201": "Engineering",
+			"-264": "Tailoring",
+			"-304": "Cooking",
+			"-324": "First Aid",
+			"-371": "Inscription",
+			"-373": "Jewelcrafting",
+			"-762": "Riding",
+			// Misc
+			"-1": "Epic",
+			"-21": "Wailing Caverns",
+			"-22": "Seasonal",
+			"-23": "Undercity",
+			"-25": "Battlegrounds",
+			"-41": "Uldaman",
+			"-221": "Treasure Map",
+			"-241": "Tournament",
+			"-284": "Special",
+			"-344": "Legendary",
+			"-364": "Darkmoon Faire",
+			"-365": "Ahn'Qiraj War",
+			"-366": "Lunar Festival",
+			"-367": "Reputation",
+			"-368": "Invasion",
+			"-369": "Midsummer",
+			"-370": "Brewfest",
+			"-374": "Noblegarden",
+			"-375": "Pilgrim's Bounty",
+			"-376": "Love is in the Air"
+		};
+		return questTypes[professionId] || `Category ${professionId}`;
+	}
+
+	private getQuestExpansionId(questLevel: number): number {
+		if (questLevel <= 60) return 0; // Classic
+		if (questLevel <= 70) return 1; // TBC
+		return 2; // WotLK
 	}
 
 	public async achievements(req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> {
@@ -337,6 +787,11 @@ export class CharacterController {
 			level: charData.level,
 			online: charData.online === 1,
 			guild: charData.guild,
+			zone: charData.zone,
+			zoneName: this.getZoneName(charData.zone),
+			enableQuestsPage: this.armory.config.featureFlags.enableQuestsPage,
+			enableSkillsPage: this.armory.config.featureFlags.enableSkillsPage,
+			enableReputationPage: this.armory.config.featureFlags.enableReputationPage
 		};
 	}
 
@@ -344,7 +799,7 @@ export class CharacterController {
 		const where = typeof character === "string" ? "LOWER(`characters`.`name`) = LOWER(?)" : "`characters`.`guid` = ?";
 		const [rows] = await this.armory.getCharactersDb(realm.name).query({
 			sql: `
-				SELECT \`characters\`.\`guid\`, \`characters\`.\`name\`, \`race\`, \`class\`, \`gender\`, \`level\`, \`skin\`, \`face\`, \`hairStyle\`, \`hairColor\`, \`facialStyle\`, \`playerFlags\`, \`online\`, \`guild\`.\`name\` AS \`guild\`
+				SELECT \`characters\`.\`guid\`, \`characters\`.\`name\`, \`race\`, \`class\`, \`gender\`, \`level\`, \`skin\`, \`face\`, \`hairStyle\`, \`hairColor\`, \`facialStyle\`, \`playerFlags\`, \`online\`, \`map\`, \`zone\`, \`position_x\`, \`position_y\`, \`guild\`.\`name\` AS \`guild\`
 				FROM \`characters\`
 				LEFT JOIN \`guild_member\` ON \`guild_member\`.\`guid\` = \`characters\`.\`guid\`
 				LEFT JOIN \`guild\` ON \`guild\`.\`guildid\` = \`guild_member\`.\`guildid\`
@@ -968,6 +1423,31 @@ export class CharacterController {
 		return talents;
 	}
 
+	private async getSkills(realm: string, character: number): Promise<ISkills[]> {
+		const [rows] = await this.armory.getCharactersDb(realm).query({
+			sql: `
+				SELECT skill, value, max
+				FROM character_skills
+				WHERE guid = ?
+			`,
+			values: [character],
+			timeout: this.armory.config.dbQueryTimeout,
+		});
+
+		const skills: { id: number, categoryId: number, skill: string; value: number; max: number }[] = [];
+		for (const row of rows as RowDataPacket[]) {
+			skills.push({
+				id: row.skill,
+				categoryId: this.skillById[row.skill].categoryId,
+				skill: this.skillById[row.skill].name,
+				value: row.value,
+				max: row.max,
+			});
+		}
+
+		return skills;
+	}
+
 	private async getTalentTrees(classId: number) {
 		const items = await this.armory.dbc
 			.talentTab()
@@ -1102,5 +1582,18 @@ export class CharacterController {
 			row.emblem = Utils.makeEmblemObject(row, false);
 			return row;
 		});
+	}
+
+	private async getAllCharacters(currentRealm: string): Promise<Array<{name: string, realmName: string, guid: number}>> {
+		const [rows] = await this.armory.getCharactersDb(currentRealm).query({
+			sql: 'SELECT name, guid FROM characters WHERE level > 1 order by name asc',
+			timeout: this.armory.config.dbQueryTimeout,
+		});
+
+		return (rows as RowDataPacket[]).map(row => ({
+			name: row.name,
+			guid: row.guid,
+			realmName: currentRealm
+		}));
 	}
 }

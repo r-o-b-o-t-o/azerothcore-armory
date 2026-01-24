@@ -73,6 +73,10 @@ I also noticed that such a tool was frequently requested in the AzerothCore Disc
 ![Character page](readme/img/cayla.png)
 ![Character talents](readme/img/talents.png)
 ![Character achievements](readme/img/achievements.png)
+![Character quests](readme/img/armory-quests.png)
+![Character quest compare](readme/img/armory-questcompare.png)
+![Character skills](readme/img/armory-skills.png)
+![Character reputation](readme/img/armory-rep.png)
 ![Guild page](readme/img/guild.png)
 </details>
 
@@ -128,6 +132,7 @@ I also noticed that such a tool was frequently requested in the AzerothCore Disc
 | config.json                    | .env                                               | Type                          | Default value                              | Description                                                                                                                                                                                            |
 |--------------------------------|----------------------------------------------------|-------------------------------|--------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `aowowUrl`                     | `ACORE_ARMORY_AOWOW_URL`                           | String                        | `"https://wowgaming.altervista.org/aowow"` | The URL of the AoWoW database to use for tooltips and links                                                                                                                                            |
+| `wowheadUrl`                   | `ACORE_ARMORY_WOWHEAD_URL`                         | String                        | `"https://www.wowhead.com/wotlk"`          | The URL of the wowhead site to use for quests and zones                                                                                                                                                |
 | `websiteUrl`                   | `ACORE_ARMORY_WEBSITE_URL`                         | String                        | `"https://mywebsite.com"`                  | Your website's URL. Used to redirect to the homepage on error pages                                                                                                                                    |
 | `websiteName`                  | `ACORE_ARMORY_WEBSITE_NAME`                        | String                        | `"My Website"`                             | Your website's name. Displayed in the redirect button on error pages                                                                                                                                   |
 | `websiteRoot`                  | `ACORE_ARMORY_WEBSITE_ROOT`                        | String                        | `""`                                       | The root of your armory's URL. If your armory is hosted on, for example,   `http://mywebsite.com/azerothcore-armory`, the `websiteRoot` value should be   `"/azerothcore-armory"`                      |
@@ -145,6 +150,9 @@ I also noticed that such a tool was frequently requested in the AzerothCore Disc
 | `realms[0].charactersDatabase` | `ACORE_ARMORY_REALMS__0__CHARACTERS_DATABASE__`... | Database configuration object |                                            | Configuration for the characters database. See "Database   configuration" below                                                                                                                        |
 | `worldDatabase`                | `ACORE_ARMORY_WORLD_DATABASE__`...                 | Database configuration object |                                            | Configuration for the world database. This is shared between all realms   at the moment. See "Database configuration" below                                                                            |
 | `dbQueryTimeout`               | `ACORE_ARMORY_DB_QUERY_TIMEOUT`                    | Number                        | `10000`                                    | The maximum duration in milliseconds of a database query before it times   out                                                                                                                         |
+| `featureFlags.enableQuestsPage`| `ACORE_ARMORY_FEATURE_FLAGS__ENABLE_QUESTS_PAGE`   | Boolean                       | `true`                                     | Feature flag to enable the quests page and quest comparison tool                                                                                                                                       |
+| `featureFlags.enableReputationPage`| `ACORE_ARMORY_FEATURE_FLAGS__ENABLE_REPUTATION_PAGE`   | Boolean               | `true`                                     | Feature flag to enable the reputation page                                                                                                                                                             |
+| `featureFlags.enableSkillsPage`| `ACORE_ARMORY_FEATURE_FLAGS__ENABLE_SKILLS_PAGE`   | Boolean                       | `true`                                     | Feature flag to enable the skills page                                                                                                                                                                 |
 </details>
 
 <details>
@@ -259,8 +267,11 @@ This repository is used in production over at [ChromieCraft](https://www.chromie
 	- [X] Achievements
 	- [X] PvP statistics, including arena teams
 	- [ ] Statistics (from the achievements panel in-game)
-	- [ ] Reputations
+	- [X] Reputations (work in progress, not accurate for some races)
+	- [X] Skills, including Professions
+	- [X] Quests, including quest comparison tool
 	- [ ] Stats (from the character sheet, i.e. health, mana, etc)
+ 	- [X] Current Zone
 - [X] Guild page
 	- [X] Guild emblem
 	- [X] Members list
@@ -270,6 +281,7 @@ This repository is used in production over at [ChromieCraft](https://www.chromie
 - [ ] PvP ladder
 - [X] Arena ladder
 - [ ] Achievements ladder
+- [X] Feature Flags to enable or disable the Reputations, Skills, and Quests pages
 
 See the [open issues](https://github.com/r-o-b-o-t-o/azerothcore-armory/issues) for a list of suggested features and known issues.
 

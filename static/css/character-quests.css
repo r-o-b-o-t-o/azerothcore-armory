@@ -1,0 +1,160 @@
+.quests-table {
+    max-width: 500px;
+    width: 100%;
+}
+
+.quests-table h2 {
+    color: #FFD700;
+}
+
+.quest-name {
+    color: white;
+}
+
+.quest-level {
+    text-align: center;
+    width: 80px;
+}
+
+.quest-status {
+    text-align: center;
+    width: 120px;
+}
+
+.quest-status.completed {
+    color: #4CAF50;
+}
+
+.quest-status.in-progress {
+    color: #FFD100;
+}
+
+.collapsible {
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.collapse-icon {
+    display: inline-block;
+    transition: transform 0.3s ease;
+    font-size: 12px;
+}
+
+.collapsible.expanded .collapse-icon {
+    transform: rotate(180deg);
+}
+
+.collapsible-content {
+    display: none;
+    overflow: hidden;
+    transition: height 0.3s ease-out;
+}
+
+.collapsible-content.expanded {
+    display: block;
+}
+
+.completed-quests.expanded .collapsible-content {
+    display: block;
+}
+
+.completed-quests.expanded .collapse-icon {
+    transform: rotate(180deg);
+}
+
+.quest-category {
+    margin-bottom: 20px;
+}
+
+.quest-category h3 {
+    color: #ccc;
+    margin-bottom: 10px;
+}
+
+.is-size-5 {
+    margin-bottom: 10px;
+}
+
+.category-header {
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.category-content {
+    display: none;
+    margin-top: 10px;
+}
+
+.category-content.expanded {
+    display: block;
+}
+
+.category-header .collapse-icon {
+    margin-left: auto;
+}
+
+.category-header.expanded .collapse-icon {
+    transform: rotate(180deg);
+}
+
+.category-header:not(.expanded) .collapse-icon {
+    transform: rotate(-90deg);
+}
+
+.quest-comparison-header {
+    margin-bottom: 20px;
+    text-align: center;
+    max-width: 500px;
+}
+
+.quest-comparison-header .characters {
+    font-size: 1.2em;
+    margin-top: 10px;
+}
+
+.quest-comparison-header .char1,
+.quest-comparison-header .char2 {
+    font-weight: bold;
+}
+
+/* tr.quest-diff {
+    background-color: rgba(255, 255, 0, 0.2) !important;
+} */
+
+tr.quest-missing-1 td:nth-child(3) {
+    background-color: rgba(255, 0, 0, 0.2) !important;
+}
+
+tr.quest-missing-2 td:nth-child(4) {
+    background-color: rgba(255, 0, 0, 0.2) !important;
+}
+
+.quest-compare-section {
+    max-width: 500px;
+}
+
+.quest-compare-section .select select {
+    min-width: 200px;
+}
+
+.diff-count {
+    font-size: 0.8em;
+    color: #ffdd57;
+    margin-left: 10px;
+    font-weight: normal;
+}
+
+.quest-status.In.Progress {
+    color: #4CAF50;
+    font-weight: bold;
+}
+
+.quest-category {
+    font-style: italic;
+}

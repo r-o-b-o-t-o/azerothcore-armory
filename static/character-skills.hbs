@@ -1,0 +1,125 @@
+<link rel="stylesheet" type="text/css" href="{{websiteRoot}}/css/character-skills.css">
+{{> icons }}
+<script type="application/javascript">
+    const aowow_tooltips = { "renamelinks": true, };
+</script>
+
+{{> character-header }}
+
+<div class="skills-table" style="margin-bottom: 20px;">
+    <h2 class="is-size-4">Professions</h2>
+    <table class="table is-striped is-hoverable is-quarter-desktop">
+        <tbody>
+            {{#each data.professions}}
+            <tr>
+                <!-- Skill ID: {{this.id}} -->
+                <td>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" style="width: {{multiply (divide this.value this.max) 100}}%;"></div>
+						<span class="progress-text"><span class="gold-text">{{this.skill}}</span>&nbsp;&nbsp;&nbsp;&nbsp;{{this.value}}/{{this.max}}</span>
+                    </div>
+                </td>
+            </tr>
+            {{/each}}
+        </tbody>
+    </table>
+</div>
+
+<div class="skills-table" style="margin-bottom: 20px;">
+    <h2 class="is-size-4">Secondary Skills</h2>
+    <table class="table is-striped is-hoverable is-quarter-desktop">
+        <tbody>
+            {{#each data.secondarySkills}}
+            <tr>
+                <!-- Skill ID: {{this.id}} -->
+                <td>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" style="width: {{multiply (divide this.value this.max) 100}}%;"></div>
+						<span class="progress-text"><span class="gold-text">{{this.skill}}</span>&nbsp;&nbsp;&nbsp;&nbsp;{{this.value}}/{{this.max}}</span>
+                    </div>
+                </td>
+            </tr>
+            {{/each}}
+        </tbody>
+    </table>
+</div>
+
+<div class="skills-table" style="margin-bottom: 20px;">
+    <h2 class="is-size-4">Weapon Skills</h2>
+    <table class="table is-striped is-hoverable is-quarter-desktop">
+        <tbody>
+            {{#each data.weaponSkills}}
+            <tr>
+                <!-- Skill ID: {{this.id}} -->
+                <td>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" style="width: {{multiply (divide this.value this.max) 100}}%;"></div>
+						<span class="progress-text"><span class="gold-text">{{this.skill}}</span>&nbsp;&nbsp;&nbsp;&nbsp;{{this.value}}/{{this.max}}</span>
+                    </div>
+                </td>
+            </tr>
+            {{/each}}
+        </tbody>
+    </table>
+</div>
+
+<div class="skills-table" style="margin-bottom: 20px;">
+    <h2 class="is-size-4">Class Skills</h2>
+    <table class="table is-striped is-hoverable is-quarter-desktop">
+        <tbody>
+            {{#each data.classSkills}}
+            <tr>
+                <!-- Skill ID: {{this.id}} -->
+                <td>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" style="width: {{multiply (divide this.value this.max) 100}}%;"></div>
+						<span class="progress-text"><span class="gold-text">{{this.skill}}</span>&nbsp;&nbsp;&nbsp;&nbsp;{{this.value}}/{{this.max}}</span>
+                    </div>
+                </td>
+            </tr>
+            {{/each}}
+        </tbody>
+    </table>
+</div>
+
+<div class="skills-table" style="margin-bottom: 20px;">
+    <h2 class="is-size-4">Armor Proficiencies</h2>
+    <table class="table is-striped is-hoverable is-quarter-desktop">
+        <tbody>
+            {{#each data.armorSkills}}
+            <tr>
+                <!-- Skill ID: {{this.id}} -->
+                <td>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" style="width: {{multiply (divide this.value this.max) 100}}%;"></div>
+						<span class="progress-text"><span class="gold-text">{{this.skill}}</span>&nbsp;&nbsp;&nbsp;&nbsp;{{this.value}}/{{this.max}}</span>
+                    </div>
+                </td>
+            </tr>
+            {{/each}}
+        </tbody>
+    </table>
+</div>
+
+<div class="skills-table" style="margin-bottom: 20px;">
+    <h2 class="is-size-4">Languages</h2>
+    <table class="table is-striped is-hoverable is-quarter-desktop">
+        <tbody>
+            {{#each data.languages}}
+            <tr>
+                <!-- Skill ID: {{this.id}} -->
+                <td>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" style="width: {{multiply (divide this.value this.max) 100}}%;"></div>
+						<span class="progress-text"><span class="gold-text">{{this.skill}}</span>&nbsp;&nbsp;&nbsp;&nbsp;{{this.value}}/{{this.max}}</span>
+                    </div>
+                </td>
+            </tr>
+            {{/each}}
+        </tbody>
+    </table>
+</div>
+
+<script type="application/javascript">
+    // Add any additional JavaScript logic if needed
+</script>
